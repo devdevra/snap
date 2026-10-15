@@ -79,6 +79,10 @@ supabase db push
 
 ## 검증
 
+`GET /api/health`는 공개 설정·인증 서버와 익명 DB 접근 상태를 반환합니다. 비공개 테이블에서 `databaseStatus: access_restricted`는 예상되는 응답입니다. 서버 환경변수에 유효한 형식의 키가 있으면 고객 행을 가져오지 않는 `limit=0` 조회로 전체 앱 컬럼을 확인하고, 고정된 파일 버킷의 비공개 여부를 확인합니다. `serverKeyConfigured`는 형식 확인만 뜻하며, 실제 연결 결과는 `serverDatabaseReady/serverDatabaseStatus`와 `privateStorageReady/privateStorageStatus`로 구분합니다. 키·행·버킷 메타데이터는 응답에 포함하지 않습니다. 새 secret 키는 서버 요청의 `apikey` 헤더에만 사용합니다.
+
+이 점검은 RPC/RLS의 실제 사용자 권한, 계정/작업 배정, 파일 존재·재생·서명 성공을 검증하지 않습니다. 해당 흐름은 실제 계정과 파일을 준비한 뒤 별도로 확인합니다.
+
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
 npm test
