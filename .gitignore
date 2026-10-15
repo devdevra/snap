@@ -1,0 +1,5 @@
+dist/
+node_modules/
+portal/test-results/
+*.png.b64
+__pycache__/
