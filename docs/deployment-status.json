@@ -1,15 +1,15 @@
 {
-  "verifiedAtUtc": "2026-10-15T16:21:04.914Z",
+  "verifiedAtUtc": "2026-10-15T16:58:27.712Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
-  "sourceCommit": "2176b31b30f77bbd8ff04859065d545419317641",
+  "sourceCommit": "bd5472edac0796815858375091dcd499a49fb3e4",
   "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
   "team": "jake's projects",
   "teamSlug": "jakes-projects-e2ded452",
-  "deploymentId": "dpl_EJyyakvSgu9NCYXLCcCkHQGQNTKi",
+  "deploymentId": "dpl_952ESwfxQkRUQhqZ37EvyTh6m3kj",
   "url": "https://staycut-snap.vercel.app",
   "customerUrl": "https://staycut-snap.vercel.app/#account",
-  "immutableUrl": "https://staycut-snap-qjnwn8n65-jakes-projects-e2ded452.vercel.app",
+  "immutableUrl": "https://staycut-snap-a5p9xacz8-jakes-projects-e2ded452.vercel.app",
   "status": "READY",
   "target": "production",
   "deploymentMethod": "github-connected-explicit-production-deployment",
@@ -27,13 +27,9 @@
       "path": "/",
       "status": 200,
       "loginEntryPresent": true,
-      "customerSectionPresent": true
-    },
-    {
-      "method": "GET",
-      "path": "/api/config",
-      "status": 200,
-      "publicValuesMatchProvidedProject": true
+      "customerSectionPresent": true,
+      "operatorSectionPresent": true,
+      "operatorLinkPresent": true
     },
     {
       "method": "GET",
@@ -47,29 +43,51 @@
       "serverDatabaseReady": true,
       "serverDatabaseStatus": "ready",
       "privateStorageReady": true,
-      "privateStorageStatus": "ready"
+      "privateStorageStatus": "ready",
+      "operatorSchemaReady": false,
+      "operatorSchemaStatus": "missing_schema"
     },
     {
       "method": "GET",
-      "path": "/api/preview",
+      "path": "/operator.js",
+      "status": 200,
+      "matchesTestedSource": true
+    },
+    {
+      "method": "GET",
+      "path": "/operator.css",
+      "status": 200,
+      "matchesTestedSource": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator",
       "status": 405,
       "allow": "POST",
       "cacheControl": "no-store, private"
     }
   ],
   "ci": {
-    "url": "https://github.com/devdevra/snap/actions/runs/38765749512",
-    "codeCommit": "2176b31b30f77bbd8ff04859065d545419317641",
-    "unitTests": 71,
-    "databaseAssertions": 103,
+    "url": "https://github.com/devdevra/snap/actions/runs/38772826386",
+    "codeCommit": "bd5472edac0796815858375091dcd499a49fb3e4",
+    "unitTests": 116,
+    "databaseAssertions": 174,
     "demoBrowserSuites": 6,
     "mockCustomerBrowserSuites": 4,
-    "status": "passed"
+    "mockOperatorBrowserSuites": 3,
+    "status": "passed",
+    "artifactId": 11992761119,
+    "operatorScreenshotsReviewed": [
+      "operator-desktop-delivery.png",
+      "operator-mobile-revision-review.png"
+    ]
   },
   "limitations": [
-    "Auth account creation was reported by user; actual login, tenant/work assignment and media registration are not independently verified.",
-    "Live health verifies selected schema columns and private bucket metadata with zero customer rows; RPC/RLS user authorization and successful link signing remain unverified.",
-    "Separate reduced/watermarked preview files must be prepared and uploaded; no automatic transcoder/admin UI.",
+    "User reported successful real customer login; live user-authorized approval/revision and actual file delivery remain unverified.",
+    "New operator migration is not applied to the external project: operatorSchemaStatus=missing_schema. Private atomic migration plus explicitly selected operator assignment is prepared for the administrator.",
+    "Operator browser tests use isolated Auth/API/Storage mocks; PostgreSQL tests are disposable. No real customer data or media was created.",
+    "MP4/WebM only, max50MiB per file, original and distinct manually produced preview required; no transcoder/resumable large-file uploads/automatic orphan cleanup.",
+    "Existing customer membership administration beyond initial assignment still requires trusted administration; customer owner does not become a system operator.",
     "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
   ],
   "gitRepositoryLinked": true,
@@ -110,16 +128,16 @@
   "privateStorageReady": true,
   "privateStorageStatus": "ready",
   "previousProduction": {
-    "deploymentId": "dpl_5txz56YnDh5X2FHydkpDmLDXX6vG",
-    "sourceCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
-    "immutableUrl": "https://staycut-snap-lyujx8269-jakes-projects-e2ded452.vercel.app",
+    "deploymentId": "dpl_EJyyakvSgu9NCYXLCcCkHQGQNTKi",
+    "sourceCommit": "2176b31b30f77bbd8ff04859065d545419317641",
+    "immutableUrl": "https://staycut-snap-qjnwn8n65-jakes-projects-e2ded452.vercel.app",
     "target": "production",
-    "deploymentMethod": "direct-file-upload"
+    "deploymentMethod": "github-connected-explicit-production-deployment"
   },
   "previewReadiness": {
-    "deploymentId": "dpl_G1Gupw5B3RdbPDzXjyETVxabhJin",
-    "commit": "af6ce424596aa9ca9d8c6b0430ff6631d998aa18",
-    "url": "https://staycut-snap-am30g3ws5-jakes-projects-e2ded452.vercel.app",
+    "deploymentId": "dpl_ETh3fDNLSAzj4i6ecU4gr2JbtPfj",
+    "commit": "b343bb23ee9f021552a5c8ae1e0c9cc0150ebec5",
+    "url": "https://staycut-snap-7qg8jf2s6-jakes-projects-e2ded452.vercel.app",
     "status": "READY",
     "configured": true,
     "authReady": true,
@@ -129,9 +147,11 @@
     "serverDatabaseReady": true,
     "serverDatabaseStatus": "ready",
     "privateStorageReady": true,
-    "privateStorageStatus": "ready"
+    "privateStorageStatus": "ready",
+    "operatorSchemaReady": false,
+    "operatorSchemaStatus": "missing_schema"
   },
-  "authAccountStatus": "user_reported_created_not_independently_verified",
+  "authAccountStatus": "user_reported_successful_real_sign_in",
   "tenantAssignmentStatus": "private_assignment_sql_prepared_administrator_execution_pending",
   "administratorAssignment": {
     "template": "supabase/admin/assign-member.sql",
@@ -148,5 +168,20 @@
     },
     "actualAssignmentExecuted": false,
     "actualUserLoginVerified": false
-  }
+  },
+  "operatorUrl": "https://staycut-snap.vercel.app/#manage",
+  "operatorSchemaReady": false,
+  "operatorSchemaStatus": "missing_schema",
+  "operatorUpgradeStatus": "private_atomic_migration_and_operator_assignment_prepared_administrator_execution_pending",
+  "operatorLiveUploadVerified": false,
+  "operatorFeatures": [
+    "separate_active_operator_role",
+    "existing_verified_customer_tenant_assignment",
+    "private_original_and_separate_preview_upload",
+    "actual_streamed_file_size_hash_type_verification",
+    "immutable_final_paths_after_promotion",
+    "observed_latest_and_revision_guards",
+    "new_versions_without_erasing_approval_history",
+    "audited_access_rights_payment_terms_updates"
+  ]
 }
