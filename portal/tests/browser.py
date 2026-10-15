@@ -311,6 +311,23 @@ def main():
             def search_modal_keyboard():
                 page = new_page('search-modal-keyboard')
                 navigate(page, 'content')
+                page.locator('#library-search').evaluate("""input => {
+                  window.__originalSearchInput = input;
+                  input.dispatchEvent(new CompositionEvent('compositionstart', {bubbles: true}));
+                  input.value = '아침';
+                  input.dispatchEvent(new InputEvent('input', {bubbles: true, data: '아침', isComposing: true}));
+                }""")
+                require(page.evaluate("document.querySelector('#library-search') === window.__originalSearchInput"),
+                        'Korean IME input element was replaced during composition')
+                library_count(page, 3)
+                page.locator('#library-search').evaluate("""input => {
+                  input.dispatchEvent(new CompositionEvent('compositionend', {bubbles: true, data: '아침'}));
+                }""")
+                library_count(page, 1)
+                expect(card(page, '아침이 다른 온유스테이')).to_be_visible()
+                require(page.evaluate("document.querySelector('#library-search') === window.__originalSearchInput"),
+                        'Korean IME input element was replaced at composition end')
+                page.locator('#library-search').fill('')
                 page.locator('#library-search').fill('존재하지않는제목')
                 expect(page.locator('#library-results h3')).to_have_text('검색 결과가 없어요.')
                 require(page.locator('#library-results article').count() == 0, 'Search did not filter files')

@@ -8,6 +8,24 @@
 - Implementation: `portal/index.html`, `styles.css`, `app.js`, `domain.js`
 - Browser evidence: GitHub Actions의 `staycut-browser-evidence` 산출물에서 캡처 후 갱신 예정
 
+## Iteration 1 · actual browser evidence
+
+CI: https://github.com/devdevra/snap/actions/runs/38743905641 · commit cb2912ef0b2834e4f3f238a4bb5b40e7019a349b
+
+- Browser-rendered implementation: `test-results/iteration-1/desktop-home.png` (1487 × 1058, scale 1)
+- Full-view normalized comparison: `test-results/iteration-1/comparison-full.png` (source left, implementation right)
+- Focused typography/copy comparison: `test-results/iteration-1/comparison-hero-copy.png`
+- Responsive captures: `test-results/iteration-1/mobile-home.png`, `mobile-review.png` (390px wide, full page)
+- Browser results: 4/6 suites passed; 390/768px home/review/content had no horizontal overflow, no console/page/HTTP errors. Two suites failed because the bundled Chromium could not decode the H.264-only preview.
+
+Actionable findings and applied fixes awaiting recapture:
+
+- [P1] Video decode failure blocked preview and thus correctly prevented approval. Added native WebM/VP9 plus MP4 fallback, preserved MP4 downloads, and show failure only when all sources fail.
+- [P1] Library search replaced its own input during Korean IME composition. Preserve input DOM, update only results/count, defer filtering until compositionend; added browser regression coverage.
+- [P2] Home approved thumbnails were narrower and their status text smaller than the source. Increased desktop thumbnail share from 42% to 50% and status type from 10px to 11px; retained mobile arrangement.
+- [P2] Supporting text token had approximately 3.92:1 contrast against the page. Darkened the muted token to #63756b, above 4.5:1, while retaining the subdued green hue. This is an intentional accessibility improvement over faint source text.
+- Standard Phosphor filled check/play assets replace outline variants to match the source affordances.
+
 ## Findings
 
 - [P1] 렌더링 검수 대기

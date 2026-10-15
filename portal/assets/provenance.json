@@ -24,5 +24,11 @@
       "bytes": 2507771,
       "sha256": "2375b6a07ae7f5bbccbcb488d994b2c39400df2821d1ade8ca90656525e96727"
     }
-  ]
+  ],
+  "preview_codecs": {
+    "mp4": "H.264; downloadable file and fallback preview",
+    "webm": "VP9; first preview source for open-source Chromium compatibility",
+    "dimensions": "1080x1920",
+    "sample_frame_rate": 2
+  }
 }

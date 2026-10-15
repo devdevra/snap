@@ -93,8 +93,10 @@ function approvalOptions(asset) {
 }
 
 function reviewMedia(asset) {
+  const webmSource = asset.source.replace(/\.mp4$/, '.webm');
   return `<div class="review-media">
     <div class="video-frame"><video controls playsinline preload="metadata" poster="${asset.image}" data-media-id="${asset.id}" aria-label="${escape(asset.title)} v${asset.version} 샘플 영상">
+      <source src="${webmSource}" type="video/webm">
       <source src="${asset.source}" type="video/mp4">이 브라우저에서는 영상 재생을 지원하지 않습니다.</video></div>
     <p class="asset-facts muted">${icon('film-strip')} 세로 영상 · ${asset.width} × ${asset.height} · ${asset.duration}초 기획안</p>
     <p class="media-demo-note">가상 숙소 사진으로 만든 재생·다운로드 체험용 샘플입니다.</p>
@@ -141,18 +143,34 @@ function updateApprovalControl() {
   $('#approval-help').textContent = approvalBlockReason(asset, approvalOptions(asset));
 }
 
+function libraryMatches() {
+  const query = state.query.trim().toLocaleLowerCase('ko-KR');
+  const available = state.assets.filter((asset) => canDownload(asset, currentOptions()));
+  return { query, matches: available.filter((asset) => asset.title.toLocaleLowerCase('ko-KR').includes(query)) };
+}
+
+function libraryResultsMarkup(matches, query) {
+  return matches.length ? `<div class="library-grid">${matches.map((asset) => card(asset)).join('')}</div>` : `<div class="empty-state">${icon('film-strip')}<h3>${query ? '검색 결과가 없어요.' : '현재 사용할 수 있는 파일이 없어요.'}</h3><p>${query ? '다른 단어로 검색하거나 검색어를 지워 주세요.' : '내용 승인·사용 조건·수납·보관 기간을 확인해 주세요.'}</p>${query ? '<button class="btn btn-secondary" data-action="clear-search">검색어 지우기</button>' : '<button class="btn btn-secondary" data-nav="review">검토함 보기</button>'}</div>`;
+}
+
+function renderLibraryResults() {
+  const { query, matches } = libraryMatches();
+  const results = $('#library-results');
+  const count = $('#library-count');
+  if (results) results.innerHTML = libraryResultsMarkup(matches, query);
+  if (count) count.textContent = matches.length;
+}
+
 function renderLibrary() {
   const root = $('#library-content');
   if (!root) return;
-  const query = state.query.trim().toLocaleLowerCase('ko-KR');
+  const { query, matches } = libraryMatches();
   const approved = state.assets.filter((asset) => asset.approvalStatus === 'approved');
-  const available = approved.filter((asset) => canDownload(asset, currentOptions()));
-  const matches = available.filter((asset) => asset.title.toLocaleLowerCase('ko-KR').includes(query));
   const blocked = approved.filter((asset) => !canDownload(asset, currentOptions()));
   root.innerHTML = `<div class="page-heading"><div><p class="eyebrow">READY FOR YOUR NEXT POST</p><h1>우리 숙소의 이야기,<br>꺼내 쓰기 좋게.</h1><p class="muted">사용 조건을 확인한 최신 승인본을 모았어요.</p></div><span class="tag">예시 데이터 · 게시용 보관함</span></div>
     <div class="filter-bar"><label class="field" for="library-channel"><span>게시할 채널</span><select id="library-channel"><option value="instagram">Instagram</option></select></label><label class="field" for="library-purpose"><span>사용 목적</span><select id="library-purpose"><option value="organic">자체 SNS 일반 게시</option></select></label><label class="field search-field" for="library-search"><span>콘텐츠 찾기</span><div class="search-input">${icon('magnifying-glass')}<input id="library-search" type="search" placeholder="콘텐츠 이름으로 검색" value="${escape(state.query)}" autocomplete="off"></div></label><button class="text-link" data-action="channel-inquiry">다른 채널 사용 문의 ${icon('arrow-right')}</button></div>
-    <div class="library-list-heading"><h2 class="section-title">지금 게시할 수 있어요 <span class="muted">${matches.length}</span></h2><p class="muted">Instagram · 일반 게시 · 최신 승인 버전</p></div>
-    <div id="library-results" aria-live="polite">${matches.length ? `<div class="library-grid">${matches.map((asset) => card(asset)).join('')}</div>` : `<div class="empty-state">${icon('film-strip')}<h3>${query ? '검색 결과가 없어요.' : '현재 사용할 수 있는 파일이 없어요.'}</h3><p>${query ? '다른 단어로 검색하거나 검색어를 지워 주세요.' : '내용 승인·사용 조건·수납·보관 기간을 확인해 주세요.'}</p>${query ? '<button class="btn btn-secondary" data-action="clear-search">검색어 지우기</button>' : '<button class="btn btn-secondary" data-nav="review">검토함 보기</button>'}</div>`}</div>
+    <div class="library-list-heading"><h2 class="section-title">지금 게시할 수 있어요 <span id="library-count" class="muted">${matches.length}</span></h2><p class="muted">Instagram · 일반 게시 · 최신 승인 버전</p></div>
+    <div id="library-results" aria-live="polite">${libraryResultsMarkup(matches, query)}</div>
     ${blocked.length ? `<section class="notice"><h2 class="section-title">현재 사용이 보류된 파일 ${blocked.length}개</h2>${blocked.map((asset) => `<p><strong>${escape(asset.title)} · v${asset.version}</strong><br>${escape(downloadBlockReason(asset, currentOptions()))}</p>`).join('')}<button class="text-link" data-action="channel-inquiry">제작 담당자에게 조건 확인 요청</button></section>` : ''}
     <div class="notice library-note">${icon('info')} <div><strong>다운로드한 뒤, Instagram에 직접 게시해 주세요.</strong><p>다운로드는 게시 완료가 아닙니다. 게시 여부는 각 파일의 ‘사용 조건·게시 기록’에서 남길 수 있어요. 파일은 동작 확인용 샘플이며, 상태는 새로고침하면 초기화됩니다.</p></div></div>`;
 }
@@ -284,6 +302,8 @@ async function download(asset, versionId) {
 
 function bindMediaErrors(root) {
   root.querySelectorAll('video').forEach((video) => {
+    const sources = [...video.querySelectorAll('source')];
+    const resetSourceFailures = () => sources.forEach((source) => { delete source.dataset.loadFailed; });
     const fail = () => {
       const asset = assetById(video.dataset.mediaId);
       if (asset) asset.previewAvailable = false;
@@ -291,8 +311,12 @@ function bindMediaErrors(root) {
       updateApprovalControl();
     };
     video.addEventListener('error', fail);
-    video.querySelector('source')?.addEventListener('error', fail);
-    video.addEventListener('loadedmetadata', () => { const asset = assetById(video.dataset.mediaId); if (asset) asset.previewAvailable = true; root.querySelectorAll(`[data-media-error="${video.dataset.mediaId}"]`).forEach((notice) => { notice.hidden = true; }); updateApprovalControl(); });
+    video.addEventListener('loadstart', resetSourceFailures);
+    sources.forEach((source) => source.addEventListener('error', () => {
+      source.dataset.loadFailed = 'true';
+      if (sources.every((candidate) => candidate.dataset.loadFailed === 'true')) fail();
+    }));
+    video.addEventListener('loadedmetadata', () => { resetSourceFailures(); const asset = assetById(video.dataset.mediaId); if (asset) asset.previewAvailable = true; root.querySelectorAll(`[data-media-error="${video.dataset.mediaId}"]`).forEach((notice) => { notice.hidden = true; }); updateApprovalControl(); });
   });
 }
 
@@ -331,8 +355,18 @@ document.addEventListener('click', (event) => {
     }
     case 'approve': approve(asset, button.dataset.version); break;
     case 'download': download(asset, button.dataset.version); break;
-    case 'clear-search': state.query = ''; renderLibrary(); $('#library-search')?.focus(); break;
-    case 'reload-video': document.querySelectorAll(`video[data-media-id="${asset.id}"]`).forEach((video) => video.load()); toast('샘플 영상을 다시 불러옵니다.'); break;
+    case 'clear-search': {
+      state.query = '';
+      const input = $('#library-search');
+      if (input) input.value = '';
+      renderLibraryResults();
+      input?.focus();
+      break;
+    }
+    case 'reload-video': document.querySelectorAll(`video[data-media-id="${asset.id}"]`).forEach((video) => {
+      video.querySelectorAll('source').forEach((source) => { delete source.dataset.loadFailed; });
+      video.load();
+    }); toast('샘플 영상을 다시 불러옵니다.'); break;
   }
 });
 
@@ -342,10 +376,15 @@ document.addEventListener('input', (event) => {
     $('#feedback-error').hidden = true; event.target.removeAttribute('aria-invalid'); updateApprovalControl();
   }
   if (event.target.id === 'library-search') {
-    const cursor = event.target.selectionStart;
-    state.query = event.target.value; renderLibrary();
-    const input = $('#library-search'); input.focus();
-    if (input.type !== 'search' || cursor !== null) { try { input.setSelectionRange(cursor, cursor); } catch {} }
+    state.query = event.target.value;
+    if (!event.isComposing) renderLibraryResults();
+  }
+});
+
+document.addEventListener('compositionend', (event) => {
+  if (event.target.id === 'library-search') {
+    state.query = event.target.value;
+    renderLibraryResults();
   }
 });
 
