@@ -3,10 +3,10 @@ name: STAYCUT portal checks
 on:
   push:
     branches: [codex/staycut-v2-design]
-    paths: ["portal/**", "package.json", ".github/workflows/portal-ci.yml"]
+    paths: ["portal/**", "api/**", "server/**", "server-tests/**", "supabase/**", "package.json", "package-lock.json", "vercel.json", ".github/workflows/portal-ci.yml"]
   pull_request:
     types: [ready_for_review]
-    paths: ["portal/**", "package.json", ".github/workflows/portal-ci.yml"]
+    paths: ["portal/**", "api/**", "server/**", "server-tests/**", "supabase/**", "package.json", "package-lock.json", "vercel.json", ".github/workflows/portal-ci.yml"]
 
 permissions:
   contents: read
@@ -30,6 +30,7 @@ jobs:
       - name: Unit tests and static build
         run: |
           npm test
+          npm run test:server
           npm run build
       - name: Install browser test runtime
         run: |
@@ -45,3 +46,31 @@ jobs:
           path: portal/test-results/
           retention-days: 7
           if-no-files-found: warn
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: staycut_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci-only-password
+      PGDATABASE: staycut_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Database authorization regression tests
+        run: bash supabase/tests/run.sh
