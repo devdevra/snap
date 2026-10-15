@@ -70,7 +70,7 @@
     "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
   ],
   "gitRepositoryLinked": true,
-  "gitPushAutoDeploymentVerified": false,
+  "gitPushAutoDeploymentVerified": true,
   "gitVerification": {
     "checkedAtUtc": "2026-10-15T15:44:33.824Z",
     "repository": "devdevra/snap",
@@ -83,6 +83,18 @@
     "regions": [
       "icn1"
     ],
-    "productionBranchVerified": false
+    "productionBranchVerified": false,
+    "automaticPush": {
+      "checkedAtUtc": "2026-10-15T15:46:11.704Z",
+      "commit": "ac7319d34f5c587d91e79d4ec90c52fab97809cf",
+      "deploymentId": "dpl_GDohmr28mDRTYm9yegKD73qFmjkf",
+      "url": "https://staycut-snap-otg9e9wc3-jakes-projects-e2ded452.vercel.app",
+      "status": "READY",
+      "environment": "preview",
+      "source": "GitHub push webhook; no create_deployment call for this commit",
+      "homeHttpStatus": 200,
+      "healthHttpStatus": 200,
+      "databaseStatus": "missing_schema"
+    }
   }
 }
