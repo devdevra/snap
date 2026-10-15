@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "tests": [
+    {
+      "name": "desktop-screenshots",
+      "status": "passed",
+      "duration_seconds": 1.325
+    },
+    {
+      "name": "media-and-revision",
+      "status": "passed",
+      "duration_seconds": 1.153
+    },
+    {
+      "name": "approval-download-publication-reuse",
+      "status": "passed",
+      "duration_seconds": 1.796
+    },
+    {
+      "name": "search-modal-keyboard",
+      "status": "passed",
+      "duration_seconds": 1.316
+    },
+    {
+      "name": "responsive-screenshots-and-overflow",
+      "status": "passed",
+      "duration_seconds": 2.091
+    },
+    {
+      "name": "no-runtime-or-http-errors",
+      "status": "passed",
+      "duration_seconds": 0.0
+    }
+  ],
+  "screenshots": [
+    "portal/test-results/desktop-home.png",
+    "portal/test-results/desktop-review.png",
+    "portal/test-results/desktop-content.png",
+    "portal/test-results/mobile-home.png",
+    "portal/test-results/mobile-review.png"
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "failed_http": [],
+  "failed_requests": [],
+  "aborted_requests": [],
+  "browser_version": "141.0.7390.37",
+  "download": {
+    "filename": "STAYCUT_10월 숙소 소개 영상_v2_Instagram_샘플.mp4",
+    "bytes": 647888
+  },
+  "summary": {
+    "passed": 6,
+    "failed": 0
+  },
+  "capture_commit": "6667221eea0470f3fc77225d83b022b7a6742512",
+  "workflow_run": "https://github.com/devdevra/snap/actions/runs/38744904383",
+  "persisted_captures": [
+    "portal/evidence/home-desktop.png",
+    "portal/evidence/home-mobile.png"
+  ]
+}
