@@ -19,10 +19,10 @@ flowchart LR
 | --- | --- |
 | 선택한 2번 디자인 · 검토/콘텐츠 흐름 | 구현·브라우저 검증 완료, 가상 데이터 |
 | Vercel 빌드 설정 | `vercel.json`, Node 24 권장, `npm run build` → `dist` |
-| 숙소별 DB 격리 · 승인/수정 RPC | 마이그레이션 준비, 외부 프로젝트에는 미적용 |
+| 숙소별 DB 격리 · 승인/수정 RPC | 설치 SQL 제공·사용자 적용 완료, 실제 테이블/컬럼 연결 확인; 실제 사용자 권한/RPC 실행은 미검증 |
 | 비공개 다운로드 API | 사용자 인증·권한 검사 후 60초 서명 링크 발급 코드와 오프라인 테스트 준비 |
-| 실제 로그인 · 화면의 DB 조회/저장 | 코드 연결 완료, DB 적용·계정/작업 배정 필요 |
-| 권한 있는 미리보기 | 별도 검토용 파일의 전용 RPC/API 구현, 서버 서명 키·파일 등록 필요 |
+| 실제 로그인 · 화면의 DB 조회/저장 | 코드 연결 완료, 첫 계정/숙소/작업 배정 필요 |
+| 권한 있는 미리보기 | 별도 검토용 RPC/API 구현, 운영 서버 키·비공개 버킷 연결 확인; 실제 파일 등록·서명/재생 검증 필요 |
 | 업로드 · 게시 기록 저장 | 후속 구현 필요 |
 | 실제 결제 · 이메일 · SNS 게시 | 미연동 |
 
@@ -31,7 +31,7 @@ flowchart LR
 ## 계정 연결
 
 1. Vercel 프로젝트 `staycut-snap`과 [개발 화면 배포](https://staycut-snap.vercel.app)는 완료했습니다. 최초에는 파일 직접 업로드로 배포했고, 사용자가 계정을 연결한 뒤 기존 프로젝트의 GitHub `devdevra/snap` 연결을 확인했습니다. 개발 브랜치 `codex/staycut-v2-design`, 커밋 `2cf6aa392c24ab8e17777bb361a7092a1fa7f8e6`의 Git 미리보기 빌드가 READY입니다.
-2. Supabase `adyhefvhfabwkfdwwjiz` 프로젝트의 공개 설정과 인증 서버 접근을 확인했습니다. DB는 아직 `missing_schema`입니다. 최초 파일 업로드 배포의 관측 리전은 `iad1`, 새 Git 미리보기 배포는 설정대로 `icn1`입니다. 실제 운영 연결 시 DB 리전과 함께 실행 리전을 확인합니다.
+2. Supabase `adyhefvhfabwkfdwwjiz` 프로젝트의 공개 설정과 인증 서버 접근, 운영 서버 키의 DB/Storage 읽기 연결을 확인했습니다. 익명 DB 접근은 `access_restricted`, 서버의 테이블/컬럼 조회와 비공개 버킷 확인은 `ready`입니다. 최초 파일 업로드 배포의 관측 리전은 `iad1`이었고, 현재 Git 기반 운영·미리보기 배포는 설정대로 `icn1`입니다.
 3. Supabase의 Project URL과 publishable key를 확인합니다. 비밀 키는 아래 Vercel 환경변수에 직접 입력합니다. DB 비밀번호·개인 토큰을 채팅이나 GitHub에 올리지 않습니다.
 
 ## Vercel 설정과 환경변수
@@ -46,7 +46,7 @@ flowchart LR
 | --- | --- |
 | `SUPABASE_URL` | 프로젝트의 HTTPS URL |
 | `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…`, 사용자 JWT와 함께 인증/권한 RPC 호출 |
-| `SUPABASE_SECRET_KEY` | `sb_secret_…`, 서버에서 허가된 파일의 링크 서명에만 사용 |
+| `SUPABASE_SECRET_KEY` | `sb_secret_…`, 서버에서 허가된 파일의 링크 서명과 데이터 없이 연결 상태 확인에 사용 |
 
 신규 프로젝트는 [공식 API 키 안내](https://supabase.com/docs/guides/getting-started/api-keys)의 publishable/secret 키를 사용합니다. 기존 프로젝트의 `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`도 파일 API에서 호환하지만 새 구성에는 필요하지 않습니다. 비밀 키에는 공개 번들용 접두사를 붙이지 않습니다. Vercel 연결 도구의 환경변수 조회·등록이 403으로 거부되어 제공받은 URL과 공개 키는 `portal/public-config.json`을 사용합니다. 서버도 이 두 공개 값만 기본값으로 읽으며, 비밀 키는 서버 환경변수에서만 읽습니다.
 
@@ -65,7 +65,7 @@ supabase db push
 
 위 명령은 아직 실행하지 않았습니다. `supabase/tests/`는 임시 CI DB 전용으로 실제 프로젝트에 적용하지 않습니다. 마이그레이션 이후 테스트 사용자를 생성하고, 신뢰된 운영자 경로로 숙소·멤버십·계약·파일을 배정해야 합니다. 계정 가입만으로 고객사 접근 권한이 생기지 않습니다.
 
-로그인 화면 → 사용자 JWT로 숙소/작업 조회 → 승인·수정 RPC → 비공개 미리보기/다운로드를 구현했습니다. 실제 프로젝트는 공개 설정·인증 서버 접근을 확인했으나 테이블이 없는 상태입니다. [관리자 설정](supabase-setup.md) 적용 후 실제 사용자로 저장·새로고침·파일 전달을 검증해야 합니다. 실제 Auth·Storage·Vercel 전체 흐름 검증 전에는 운영 전환이 완료된 것으로 보지 않습니다.
+로그인 화면 → 사용자 JWT로 숙소/작업 조회 → 승인·수정 RPC → 비공개 미리보기/다운로드를 구현했습니다. 실제 프로젝트의 테이블/컬럼과 비공개 버킷 연결은 확인했습니다. [관리자 설정](supabase-setup.md)의 첫 계정·숙소·작업·파일 배정 후 실제 사용자로 저장·새로고침·파일 전달을 검증해야 합니다. 실제 Auth·Storage·Vercel 전체 흐름 검증 전에는 운영 전환이 완료된 것으로 보지 않습니다.
 
 ## 다운로드 API
 
@@ -94,4 +94,4 @@ GitHub Actions는 기존 Chromium 흐름과 별도로 임시 PostgreSQL 16에서
 
 2026-10-15 검증 결과: [GitHub Actions 38750549206](https://github.com/devdevra/snap/actions/runs/38750549206), 코드 커밋 `4ee8123d2d67a8c4173823a4069546a9e063d91a`에서 도메인 26개·다운로드 API 12개·DB 회귀 판정 77개·정적 빌드·Chromium 6개 항목이 모두 통과했습니다. `.vercelignore` 경로도 별도 확인하여 실제 포털 HTML/미디어/API/빌드 파일은 포함하고 루트 기획 HTML·자료·로컬 환경변수는 제외했습니다. 실제 Vercel/Supabase 종단 연결 검증은 아직 수행하지 않았습니다.
 
-2026-10-16 갱신: [고객 모드 CI](https://github.com/devdevra/snap/actions/runs/38760315115), 코드 `984b83387eb4b2b30f4a66e8a7a662ca320e6e0c`에서 단위 64개·DB 판정 103개·기존 브라우저 6개·모의 Auth/REST 브라우저 4개가 모두 통과했습니다. 신규 설치 파일 `supabase/setup.sql` 자체를 CI 임시 DB에 적용해 검증했으며, 실제 외부 DB에는 적용하지 않았습니다. 모바일 승인/데스크톱 수정 요청 캡처를 시각 확인했습니다. 최종 배포 홈에는 로그인 진입이 있고 `/api/config` 값이 제공된 프로젝트와 일치하며 `/api/health`는 Auth 정상·DB `missing_schema`를 반환합니다. 실제 사용자 로그인·Storage 연결·승인 저장 종단 확인은 남아 있습니다.
+2026-10-16 갱신: 사용자의 DB 설치·운영 키 등록 완료 후 코드 `2176b31b30f77bbd8ff04859065d545419317641`을 Git에서 명시적으로 Production 배포했습니다. [CI 38765749512](https://github.com/devdevra/snap/actions/runs/38765749512)에서 단위 71개·DB 판정 103개·기존 브라우저 6개·모의 Auth/REST 브라우저 4개가 모두 통과했습니다. 운영 배포는 READY·`icn1`이며, 홈/공개 설정 200, 미리보기 API GET 405, Auth 정상, 서버 DB 컬럼·비공개 버킷 확인이 통과했습니다. 비밀 키 값은 조회하지 않았습니다. 같은 커밋의 자동 Preview는 서버 키가 `not_configured`이므로 별도 등록이 필요합니다. 사용자는 첫 Auth 계정을 아직 만들지 않았다고 확인했습니다. 실제 사용자 로그인·RPC 저장·파일 서명/재생의 종단 확인은 남아 있습니다. [배포 기록](deployment-status.json)에 확인 범위를 기록했습니다.

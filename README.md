@@ -8,7 +8,7 @@
 
 ## 고객 포털 개발 · 선택 시안 2번
 
-[Vercel에서 개발 화면 열기](https://staycut-snap.vercel.app) · 체험 홈은 가상 데이터이며, 고객 로그인·RLS 조회·승인/수정 저장 코드를 별도 실제 고객 모드로 연결했습니다. 실제 DB 적용·고객 배정·서명 키 설정은 [관리자 안내](docs/supabase-setup.md)를 참고하세요. Vercel 프로젝트에 GitHub `devdevra/snap` 연결을 확인했고 개발 브랜치의 Git 미리보기 빌드도 통과했습니다.
+[Vercel에서 개발 화면 열기](https://staycut-snap.vercel.app) · 체험 홈은 가상 데이터이며, 고객 로그인·RLS 조회·승인/수정 저장 코드를 별도 실제 고객 모드로 연결했습니다. 실제 DB 컬럼과 운영 서버 키·비공개 버킷 연결은 확인했습니다. 첫 계정·숙소·작업·파일 배정은 [관리자 안내](docs/supabase-setup.md)를 참고하세요. Vercel 프로젝트에 GitHub `devdevra/snap` 연결과 개발 브랜치의 자동 미리보기 배포를 확인했습니다.
 
 [고객 포털 소스와 실행 안내](portal/README.md)에서 상단 탐색과 큰 숙소 사진을 사용한 반응형 프로토타입을 개발합니다. 홈 → 영상 검토·통합 수정 요청·정확한 버전 승인 → 게시용 콘텐츠·샘플 다운로드 → 게시 응답·재편집 문의를 연결했습니다.
 
@@ -18,15 +18,15 @@ npm test
 npm run build
 ```
 
-외부 npm 의존성 없이 Node.js 24.x에서 실행합니다. 도메인 26개·Auth 클라이언트 12개·파일 API/설정 26개의 단위 테스트와 정적 빌드가 통과했습니다. 기존 체험 화면의 Chromium 검증 6개에 모의 인증 고객 흐름 4개를 추가했습니다. 현재 프로젝트의 실제 사용자/DB 전체 검증은 관리자 설정 후 진행합니다. 실제 결제·SNS 게시 연동은 없습니다.
+외부 npm 의존성 없이 Node.js 24.x에서 실행합니다. 도메인 26개·Auth 클라이언트 12개·파일 API/설정 33개의 단위 테스트와 정적 빌드가 통과했습니다. 기존 체험 화면의 Chromium 검증 6개에 모의 인증 고객 흐름 4개를 추가했습니다. 현재 프로젝트의 실제 사용자/DB 전체 검증은 계정·작업·파일 배정 후 진행합니다. 실제 결제·SNS 게시 연동은 없습니다.
 
 ## 개발 환경 · Vercel + Supabase
 
-앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 제공받은 프로젝트의 공개 키와 Auth 접근은 확인했습니다. 테이블이 없어 새 DB 적용이 필요하며, 계정·멤버십·작업·검토용 파일 배정과 Vercel 서버 서명 키 등록도 남아 있습니다.
+앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 제공받은 프로젝트의 공개 키·Auth 접근, 서버 키로 앱 테이블/컬럼의 0행 조회와 비공개 버킷 확인이 통과했습니다. 첫 계정·멤버십·작업·검토용 파일 배정과 실제 사용자 종단 검증은 남아 있습니다. Preview 환경에는 서버 키를 별도 추가해야 합니다.
 
 [기반 검증 CI](https://github.com/devdevra/snap/actions/runs/38750549206)에서 도메인 26개·다운로드 API 12개·DB 권한 회귀 판정 77개·빌드·Chromium 6개 항목이 통과했습니다. 실제 Vercel/Supabase 연결 검증은 계정 연결 후 진행합니다.
 
-2026-10-16 [고객 로그인 연결 CI](https://github.com/devdevra/snap/actions/runs/38760315115)도 통과했습니다. 단위 테스트 64개·DB 판정 103개·체험 브라우저 6개·모의 고객 브라우저 4개를 확인했습니다. 배포된 홈·공개 설정·Auth 서버 접근은 정상이며 DB는 아직 `missing_schema`입니다. [고객 로그인 화면](https://staycut-snap.vercel.app/#account)의 실제 계정/파일 전체 검증은 관리자 설정 후 진행합니다.
+2026-10-16 [연결 점검 CI](https://github.com/devdevra/snap/actions/runs/38765749512)도 통과했습니다. 단위 테스트 71개·DB 판정 103개·체험 브라우저 6개·모의 고객 브라우저 4개를 확인했습니다. Git 기반 운영 재배포 후 홈·공개 설정·Auth·서버 DB/비공개 버킷 연결을 확인했습니다. [고객 로그인 화면](https://staycut-snap.vercel.app/#account)의 실제 계정/파일 전체 검증은 계정과 작업 배정 후 진행합니다.
 
 ## 최신 고도화 · v2
 

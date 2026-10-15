@@ -1,28 +1,26 @@
 {
-  "verifiedAtUtc": "2026-10-15T15:30:11.772Z",
+  "verifiedAtUtc": "2026-10-15T16:06:28.676Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
-  "sourceCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
-  "sourceFiles": 56,
-  "sourceFilesMatchedRemoteGitBlobs": true,
+  "sourceCommit": "2176b31b30f77bbd8ff04859065d545419317641",
   "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
   "team": "jake's projects",
   "teamSlug": "jakes-projects-e2ded452",
-  "deploymentId": "dpl_5txz56YnDh5X2FHydkpDmLDXX6vG",
+  "deploymentId": "dpl_7n6W7sL6iF8e4ozHiAQAJvquePi1",
   "url": "https://staycut-snap.vercel.app",
   "customerUrl": "https://staycut-snap.vercel.app/#account",
-  "immutableUrl": "https://staycut-snap-lyujx8269-jakes-projects-e2ded452.vercel.app",
+  "immutableUrl": "https://staycut-snap-4qoevd1an-jakes-projects-e2ded452.vercel.app",
   "status": "READY",
   "target": "production",
-  "deploymentMethod": "direct-file-upload",
+  "deploymentMethod": "github-connected-explicit-production-deployment",
   "gitAutoDeployConnected": true,
   "supabaseProject": "adyhefvhfabwkfdwwjiz",
   "supabasePublicConfigConnected": true,
   "supabaseAuthSettingsReachable": true,
-  "supabaseDatabaseStatus": "missing_schema",
+  "supabaseDatabaseStatus": "access_restricted",
   "supabaseLiveUserFlowVerified": false,
   "privateSigningKeyVerified": false,
-  "environmentVariableToolStatus": "list/create both denied403; only public URL/key use tracked public-config.json",
+  "environmentVariableToolStatus": "list/create denied403; administrator registered Production secret; read-only server probes verified it; Preview has no signing key",
   "checks": [
     {
       "method": "GET",
@@ -44,7 +42,12 @@
       "configured": true,
       "authReady": true,
       "databaseReady": false,
-      "databaseStatus": "missing_schema"
+      "databaseStatus": "access_restricted",
+      "serverKeyConfigured": true,
+      "serverDatabaseReady": true,
+      "serverDatabaseStatus": "ready",
+      "privateStorageReady": true,
+      "privateStorageStatus": "ready"
     },
     {
       "method": "GET",
@@ -55,17 +58,18 @@
     }
   ],
   "ci": {
-    "url": "https://github.com/devdevra/snap/actions/runs/38760315115",
-    "codeCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
-    "unitTests": 64,
+    "url": "https://github.com/devdevra/snap/actions/runs/38765749512",
+    "codeCommit": "2176b31b30f77bbd8ff04859065d545419317641",
+    "unitTests": 71,
     "databaseAssertions": 103,
     "demoBrowserSuites": 6,
     "mockCustomerBrowserSuites": 4,
     "status": "passed"
   },
   "limitations": [
-    "Browser Auth/REST flows were verified with isolated mocks, not a real customer account.",
-    "Real DB schema/memberships/assets and server signing key still need administrator setup.",
+    "Real Auth account has not yet been created, per user confirmation; tenant/work assignment and media registration are still required.",
+    "Live health verifies selected schema columns and private bucket metadata with zero customer rows; RPC/RLS user authorization and successful link signing remain unverified.",
+    "Preview environment has no signing key; add SUPABASE_SECRET_KEY there separately.",
     "Separate reduced/watermarked preview files must be prepared and uploaded; no automatic transcoder/admin UI.",
     "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
   ],
@@ -96,5 +100,36 @@
       "healthHttpStatus": 200,
       "databaseStatus": "missing_schema"
     }
+  },
+  "regions": [
+    "icn1"
+  ],
+  "supabaseServerDatabaseReady": true,
+  "supabaseServerDatabaseStatus": "ready",
+  "serverKeyConfigured": true,
+  "serverKeyReadAccessVerified": true,
+  "privateStorageReady": true,
+  "privateStorageStatus": "ready",
+  "previousProduction": {
+    "deploymentId": "dpl_5txz56YnDh5X2FHydkpDmLDXX6vG",
+    "sourceCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
+    "immutableUrl": "https://staycut-snap-lyujx8269-jakes-projects-e2ded452.vercel.app",
+    "target": "production",
+    "deploymentMethod": "direct-file-upload"
+  },
+  "previewReadiness": {
+    "deploymentId": "dpl_GqKKw6yjXTSVrCtjsswuAR8XDRKZ",
+    "commit": "2176b31b30f77bbd8ff04859065d545419317641",
+    "url": "https://staycut-snap-4hr1ug8za-jakes-projects-e2ded452.vercel.app",
+    "status": "READY",
+    "configured": true,
+    "authReady": true,
+    "databaseReady": false,
+    "databaseStatus": "access_restricted",
+    "serverKeyConfigured": false,
+    "serverDatabaseReady": false,
+    "serverDatabaseStatus": "not_configured",
+    "privateStorageReady": false,
+    "privateStorageStatus": "not_configured"
   }
 }
