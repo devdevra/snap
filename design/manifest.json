@@ -7,11 +7,6 @@
   },
   "reference_source_commit": "c3b2e94f5423f7edda2d90812319f25cb6f75b7d",
   "reference_attached_to_each_generation": true,
-  "display_order": [
-    "next-action.png",
-    "content-library.png",
-    "version-review.png"
-  ],
   "images": [
     {
       "file": "next-action.png",
@@ -45,5 +40,11 @@
     "next-action.png: a supporting thumbnail reads 00:32; the contractual video duration proposal remains 15–30 seconds. Correct this label when implementing.",
     "Static imagery does not verify mobile layout, interactions, accessibility or server authorization.",
     "Artwork conveys layout direction; exact contract text, dates and state gates follow docs/product-spec.md."
+  ],
+  "classification": "Original set: three different functional screens in one service flow; these are not competing design variants.",
+  "screen_sequence": [
+    "next-action.png",
+    "content-library.png",
+    "version-review.png"
   ]
 }

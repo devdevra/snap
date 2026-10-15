@@ -33,5 +33,43 @@
     "exports/staycut-service-plan.pdf",
     "docs/validation-results.json"
   ],
-  "source_commit": "c3b2e94f5423f7edda2d90812319f25cb6f75b7d"
+  "source_commit": "c3b2e94f5423f7edda2d90812319f25cb6f75b7d",
+  "home_variants_correction": {
+    "date": "2026-10-15",
+    "classification": "Original 3 images are a functional screen flow. New 3 images compare the same home function.",
+    "png_images": [
+      {
+        "file": "home-task-focused.png",
+        "bytes": 1772996,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "f5238d9a9896d039855722eb625f608abad6293ce7df4a8d6b42456aa0715edf"
+      },
+      {
+        "file": "home-editorial.png",
+        "bytes": 1900156,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "23ed1d4b6afe01c2f400856ce039d9b3fd63a59efc12ef29fd716ea320de0619"
+      },
+      {
+        "file": "home-studio.png",
+        "bytes": 1765599,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "d717e91c87c236b038d66451dadced90e1d78627fe2d0fdee48552279d57584a"
+      }
+    ],
+    "visual_checks": [
+      "Same fictional property and project",
+      "Same v2 review-pending state and two videos",
+      "Same primary review action",
+      "Same four workflow stages with customer review current",
+      "Same three approved assets and corrected durations",
+      "Approval, usage conditions and publication remain separate"
+    ],
+    "limitations": [
+      "Static images do not verify functional behavior, mobile layout, accessibility or authorization."
+    ]
+  }
 }
