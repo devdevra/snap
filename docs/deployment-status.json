@@ -1,5 +1,5 @@
 {
-  "verifiedAtUtc": "2026-10-15T16:13:39.411Z",
+  "verifiedAtUtc": "2026-10-15T16:21:04.914Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
   "sourceCommit": "2176b31b30f77bbd8ff04859065d545419317641",
@@ -117,9 +117,9 @@
     "deploymentMethod": "direct-file-upload"
   },
   "previewReadiness": {
-    "deploymentId": "dpl_3QFnhX9p9cNTS6J4nAuWkfxwTaSs",
-    "commit": "353b169ebc34f63945b64111b206ca70f1413927",
-    "url": "https://staycut-snap-39mzwzxse-jakes-projects-e2ded452.vercel.app",
+    "deploymentId": "dpl_G1Gupw5B3RdbPDzXjyETVxabhJin",
+    "commit": "af6ce424596aa9ca9d8c6b0430ff6631d998aa18",
+    "url": "https://staycut-snap-am30g3ws5-jakes-projects-e2ded452.vercel.app",
     "status": "READY",
     "configured": true,
     "authReady": true,
@@ -132,5 +132,21 @@
     "privateStorageStatus": "ready"
   },
   "authAccountStatus": "user_reported_created_not_independently_verified",
-  "tenantAssignmentStatus": "private_assignment_sql_prepared_administrator_execution_pending"
+  "tenantAssignmentStatus": "private_assignment_sql_prepared_administrator_execution_pending",
+  "administratorAssignment": {
+    "template": "supabase/admin/assign-member.sql",
+    "status": "private_sql_prepared_administrator_execution_pending",
+    "ci": {
+      "url": "https://github.com/devdevra/snap/actions/runs/38767936380",
+      "commit": "af6ce424596aa9ca9d8c6b0430ff6631d998aa18",
+      "status": "passed",
+      "newAssignmentAssertions": 22,
+      "totalDatabaseAssertions": 125,
+      "unitTests": 71,
+      "demoBrowserSuites": 6,
+      "mockCustomerBrowserSuites": 4
+    },
+    "actualAssignmentExecuted": false,
+    "actualUserLoginVerified": false
+  }
 }
