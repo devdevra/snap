@@ -15,7 +15,7 @@
   "status": "READY",
   "target": "production",
   "deploymentMethod": "direct-file-upload",
-  "gitAutoDeployConnected": false,
+  "gitAutoDeployConnected": true,
   "supabaseProject": "adyhefvhfabwkfdwwjiz",
   "supabasePublicConfigConnected": true,
   "supabaseAuthSettingsReachable": true,
@@ -68,5 +68,21 @@
     "Real DB schema/memberships/assets and server signing key still need administrator setup.",
     "Separate reduced/watermarked preview files must be prepared and uploaded; no automatic transcoder/admin UI.",
     "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
-  ]
+  ],
+  "gitRepositoryLinked": true,
+  "gitPushAutoDeploymentVerified": false,
+  "gitVerification": {
+    "checkedAtUtc": "2026-10-15T15:44:33.824Z",
+    "repository": "devdevra/snap",
+    "branch": "codex/staycut-v2-design",
+    "commit": "2cf6aa392c24ab8e17777bb361a7092a1fa7f8e6",
+    "deploymentId": "dpl_mibiFCtXpFibYjJCSDt5K7YewHSF",
+    "url": "https://staycut-snap-rinmzeuzb-jakes-projects-e2ded452.vercel.app",
+    "status": "READY",
+    "target": "staging",
+    "regions": [
+      "icn1"
+    ],
+    "productionBranchVerified": false
+  }
 }
