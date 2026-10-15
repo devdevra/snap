@@ -21,3 +21,4 @@ fi
 python3 supabase/scripts/build_setup.py --check
 "${PSQL[@]}" --file=supabase/setup.sql
 "${PSQL[@]}" --file=supabase/tests/regression.sql
+python3 supabase/tests/admin_assignment.py

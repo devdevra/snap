@@ -12,13 +12,17 @@
 
 [Vercel 환경변수](https://vercel.com/jakes-projects-e2ded452/staycut-snap/settings/environment-variables)에 `SUPABASE_SECRET_KEY`를 Secret으로 추가하고 Production·Preview에 적용합니다. 값은 Supabase Settings → API Keys의 `sb_secret_…` 키입니다. 이 키는 채팅·GitHub·브라우저 설정 파일에 넣지 않습니다. 변경 뒤 앱 재배포가 필요합니다.
 
-현재 연결 도구는 환경변수 조회·등록을 모두 403으로 거부했습니다. 운영 환경의 키는 사용자가 직접 등록했으며 서버의 DB/Storage 읽기 요청으로 유효함을 확인했습니다. 같은 커밋의 Preview에서는 `not_configured`이므로 Preview 환경에도 별도 등록한 뒤 재배포해야 합니다. URL과 publishable key는 공개용 `portal/public-config.json`으로 연결했습니다. 공개 설정 파일에는 비밀 키를 넣지 않으며, 파일 API가 사용하는 비밀 키는 Vercel 서버 환경변수에서만 읽습니다.
+현재 연결 도구는 환경변수 조회·등록을 모두 403으로 거부했습니다. 운영·Preview 환경 모두 서버의 DB/Storage 읽기 요청으로 키가 유효함을 확인했습니다. 키 변경 뒤에는 각 환경에서 새 배포를 만들어야 반영됩니다. URL과 publishable key는 공개용 `portal/public-config.json`으로 연결했습니다. 공개 설정 파일에는 비밀 키를 넣지 않으며, 파일 API가 사용하는 비밀 키는 Vercel 서버 환경변수에서만 읽습니다.
 
 ## 3. 첫 고객 계정과 작업 배정
 
-사용자는 아직 첫 Auth 계정을 만들지 않았다고 확인했습니다. [Supabase Authentication → Users](https://supabase.com/dashboard/project/adyhefvhfabwkfdwwjiz/auth/users)에서 운영자가 테스트할 계정을 만듭니다. 로그인 화면은 이메일·비밀번호를 사용하며 공개 회원가입·이메일 발송·비밀번호 재설정 기능은 아직 없습니다. 비밀번호는 채팅으로 공유하지 않습니다.
+사용자가 첫 Auth 계정 생성을 완료했다고 알려주었습니다. 실제 로그인과 숙소 배정은 아직 검증하지 않았습니다. [Supabase Authentication → Users](https://supabase.com/dashboard/project/adyhefvhfabwkfdwwjiz/auth/users)에서 운영자가 테스트할 계정을 만듭니다. 로그인 화면은 이메일·비밀번호를 사용하며 공개 회원가입·이메일 발송·비밀번호 재설정 기능은 아직 없습니다. 비밀번호는 채팅으로 공유하지 않습니다.
 
 Auth 계정 생성만으로 작업에 접근할 수는 없습니다. 관리자가 실제 숙소를 `tenants`에 만들고 사용자를 `tenant_members`로 연결한 뒤 접근 기간과 작업을 배정해야 합니다. 고객사·수납·권리·파일을 관리하는 운영자 화면은 후속 개발 범위이며, 현재는 권한 있는 관리자가 DB/Storage에서 등록합니다. 미배정 계정에는 빈 작업 공간을 표시합니다.
+
+첫 계정의 새 숙소 연결은 [`supabase/admin/assign-member.sql`](../supabase/admin/assign-member.sql)을 SQL Editor에서 관리자 권한으로 실행합니다. 네 입력값은 기존 Auth 이메일·새 숙소명·접근 시작일·종료일이며 날짜는 한국 시간 기준 양끝을 포함합니다. 해당 계정은 이메일 확인이 완료되어 있어야 합니다. 입력에 작은따옴표가 있으면 SQL 문자열에 맞게 이스케이프하고, 바깥 DO 구분자가 입력값에 등장하지 않도록 합니다. 개인화한 파일은 Git에 올리지 않습니다.
+
+이 파일은 새 숙소와 첫 owner 멤버십만 한 번에 생성합니다. 동일한 첫 설정의 재실행은 변경 없이 끝나며, 기존 다른 멤버십·중복 숙소명·접근 기간 변경 등은 중단합니다. 기존 숙소에 다른 사람을 추가하거나 접근 기간을 갱신하는 용도로 사용하지 않습니다. Auth·작업·파일·수납·사용권 데이터는 변경하지 않습니다. 숙소만 연결하고 작업을 아직 등록하지 않았다면 로그인 후 “아직 배정된 작업이 없어요”가 정상입니다.
 
 ## 4. 실제 파일 등록
 

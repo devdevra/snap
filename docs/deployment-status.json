@@ -1,15 +1,15 @@
 {
-  "verifiedAtUtc": "2026-10-15T16:06:28.676Z",
+  "verifiedAtUtc": "2026-10-15T16:13:39.411Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
   "sourceCommit": "2176b31b30f77bbd8ff04859065d545419317641",
   "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
   "team": "jake's projects",
   "teamSlug": "jakes-projects-e2ded452",
-  "deploymentId": "dpl_7n6W7sL6iF8e4ozHiAQAJvquePi1",
+  "deploymentId": "dpl_EJyyakvSgu9NCYXLCcCkHQGQNTKi",
   "url": "https://staycut-snap.vercel.app",
   "customerUrl": "https://staycut-snap.vercel.app/#account",
-  "immutableUrl": "https://staycut-snap-4qoevd1an-jakes-projects-e2ded452.vercel.app",
+  "immutableUrl": "https://staycut-snap-qjnwn8n65-jakes-projects-e2ded452.vercel.app",
   "status": "READY",
   "target": "production",
   "deploymentMethod": "github-connected-explicit-production-deployment",
@@ -20,7 +20,7 @@
   "supabaseDatabaseStatus": "access_restricted",
   "supabaseLiveUserFlowVerified": false,
   "privateSigningKeyVerified": false,
-  "environmentVariableToolStatus": "list/create denied403; administrator registered Production secret; read-only server probes verified it; Preview has no signing key",
+  "environmentVariableToolStatus": "list/create denied403; administrator registered keys; Production and Preview server DB/Storage read-only probes now pass",
   "checks": [
     {
       "method": "GET",
@@ -67,9 +67,8 @@
     "status": "passed"
   },
   "limitations": [
-    "Real Auth account has not yet been created, per user confirmation; tenant/work assignment and media registration are still required.",
+    "Auth account creation was reported by user; actual login, tenant/work assignment and media registration are not independently verified.",
     "Live health verifies selected schema columns and private bucket metadata with zero customer rows; RPC/RLS user authorization and successful link signing remain unverified.",
-    "Preview environment has no signing key; add SUPABASE_SECRET_KEY there separately.",
     "Separate reduced/watermarked preview files must be prepared and uploaded; no automatic transcoder/admin UI.",
     "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
   ],
@@ -118,18 +117,20 @@
     "deploymentMethod": "direct-file-upload"
   },
   "previewReadiness": {
-    "deploymentId": "dpl_GqKKw6yjXTSVrCtjsswuAR8XDRKZ",
-    "commit": "2176b31b30f77bbd8ff04859065d545419317641",
-    "url": "https://staycut-snap-4hr1ug8za-jakes-projects-e2ded452.vercel.app",
+    "deploymentId": "dpl_3QFnhX9p9cNTS6J4nAuWkfxwTaSs",
+    "commit": "353b169ebc34f63945b64111b206ca70f1413927",
+    "url": "https://staycut-snap-39mzwzxse-jakes-projects-e2ded452.vercel.app",
     "status": "READY",
     "configured": true,
     "authReady": true,
     "databaseReady": false,
     "databaseStatus": "access_restricted",
-    "serverKeyConfigured": false,
-    "serverDatabaseReady": false,
-    "serverDatabaseStatus": "not_configured",
-    "privateStorageReady": false,
-    "privateStorageStatus": "not_configured"
-  }
+    "serverKeyConfigured": true,
+    "serverDatabaseReady": true,
+    "serverDatabaseStatus": "ready",
+    "privateStorageReady": true,
+    "privateStorageStatus": "ready"
+  },
+  "authAccountStatus": "user_reported_created_not_independently_verified",
+  "tenantAssignmentStatus": "private_assignment_sql_prepared_administrator_execution_pending"
 }
