@@ -22,6 +22,8 @@ npm run build
 
 앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 배포 설정·승인 RPC·다운로드 API 기반을 준비했으며 실제 프로젝트 연결과 로그인/화면 데이터 연결은 아직 완료되지 않았습니다.
 
+[기반 검증 CI](https://github.com/devdevra/snap/actions/runs/38750549206)에서 도메인 26개·다운로드 API 12개·DB 권한 회귀 판정 77개·빌드·Chromium 6개 항목이 통과했습니다. 실제 Vercel/Supabase 연결 검증은 계정 연결 후 진행합니다.
+
 ## 최신 고도화 · v2
 
 2026-10-15: 고객 선별, 상품·수정·결제·보관 경계, 실제 게시에서 유료 재편집으로 넘어가는 조건, CAC·영업·관리 노동을 포함한 손익과 실험 중단 기준을 구체화했습니다. 신규 조건과 숫자는 검증 전 제안입니다.
