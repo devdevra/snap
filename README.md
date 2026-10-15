@@ -22,6 +22,8 @@ npm run build
 
 ## 개발 환경 · Vercel + Supabase
 
+`/#manage`의 운영 관리 화면에서 기존 고객 계정에 숙소를 배정하고, 원본·별도 미리보기 업로드와 새 버전 전달, 접근·이용허락·수납 조건을 관리합니다. 고객사 소유자와 별도의 운영자 권한을 사용합니다. [운영자 안내](docs/operator-guide.md)의 추가 DB 설치·운영자 배정 후 사용할 수 있으며, 실제 운영자 업로드의 종단 확인은 남아 있습니다.
+
 앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 제공받은 프로젝트의 공개 키·Auth 접근, 서버 키로 앱 테이블/컬럼의 0행 조회와 비공개 버킷 확인이 통과했습니다. 첫 계정 생성은 사용자 확인을 받았으며, 멤버십·작업·검토용 파일 배정과 실제 사용자 종단 검증은 남아 있습니다. 운영·Preview 모두 서버 키 연결 확인이 통과했습니다.
 
 [기반 검증 CI](https://github.com/devdevra/snap/actions/runs/38750549206)에서 도메인 26개·다운로드 API 12개·DB 권한 회귀 판정 77개·빌드·Chromium 6개 항목이 통과했습니다. 실제 Vercel/Supabase 연결 검증은 계정 연결 후 진행합니다.

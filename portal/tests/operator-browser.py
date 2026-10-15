@@ -62,6 +62,21 @@ def main():
                 page.set_default_timeout(15000)
                 session = {'origin': ORIGIN, 'access_token': TOKEN, 'refresh_token': 'operator-refresh', 'expires_at': int(time.time()) + 3600, 'user': {'id': OPERATOR, 'email': 'operator@example.com'}}
                 page.add_init_script(f"sessionStorage.setItem('staycut.customer.session.v1', {json.dumps(json.dumps(session))})")
+                # Chromium's CDP request event omits File-backed XHR bodies. Materialize
+                # the identical bytes in this test only, so the intercepted real PUT
+                # body remains observable and its exact length/SHA-256 can be checked.
+                # Production still sends the File directly; headers, XHR progress,
+                # HTTP failures and the commit-after-both-PUTs ordering are unchanged.
+                page.add_init_script("""(() => {
+                  const send = XMLHttpRequest.prototype.send;
+                  XMLHttpRequest.prototype.send = function(body) {
+                    if (body instanceof Blob) {
+                      body.arrayBuffer().then(bytes => send.call(this, bytes)).catch(() => {
+                        this.dispatchEvent(new ProgressEvent('error'));
+                      });
+                    } else send.call(this, body);
+                  };
+                })();""")
                 def fulfill(route, status, data):
                     route.fulfill(status=status, content_type='application/json', headers={'access-control-allow-origin': URL.rstrip('/'), 'access-control-allow-headers': 'apikey,authorization,content-type,x-upsert', 'access-control-allow-methods': 'GET,POST,PUT,OPTIONS'}, body=json.dumps(data))
                 page.route('**/api/config', lambda route: fulfill(route, 200, {'supabaseUrl': ORIGIN, 'publishableKey': 'sb_publishable_operator-mock'}))
@@ -105,7 +120,7 @@ def main():
                         reservation = state['reservations'][body['sessionId']]
                         for kind in ['delivery', 'preview']:
                             uploaded = state['uploads'].get((body['sessionId'], kind))
-                            assert uploaded is not None, 'Commit attempted before both successful PUTs'
+                            assert uploaded is not None, f'Missing observed PUT bytes for {kind}; keys={list(state["uploads"])}'
                             expected = reservation['input'][kind]
                             assert len(uploaded) == expected['bytes'] and hashlib.sha256(uploaded).hexdigest() == expected['sha256']
                         state['commits'] += 1
@@ -144,7 +159,12 @@ def main():
                         kind = filename.split('.')[0]
                         if kind == 'preview' and state['fail_preview']:
                             state['fail_preview'] = False; fulfill(route, 500, {'error': 'test transfer failure'}); return
-                        state['uploads'][(session_id, kind)] = request.post_data_buffer
+                        payload = request.post_data_buffer
+                        assert payload is not None, f'Chromium did not expose the materialized {kind} PUT body'
+                        expected = state['reservations'][session_id]['input'][kind]
+                        assert len(payload) == expected['bytes'], f'{kind} PUT byte length differs from its reservation'
+                        assert hashlib.sha256(payload).hexdigest() == expected['sha256'], f'{kind} PUT hash differs from its reservation'
+                        state['uploads'][(session_id, kind)] = payload
                         fulfill(route, 200, {'Key': f'staging/{session_id}/{filename}'})
                     else:
                         REPORT['unexpected_requests'].append(request.url); fulfill(route, 404, {})
