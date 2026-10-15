@@ -29,13 +29,15 @@ flowchart LR
 
 ## 계정 연결
 
-1. [Vercel Login Connections](https://vercel.com/account/authentication)에서 `devdevra` GitHub 계정을 연결하고 `devdevra/snap`에 대한 GitHub App 접근을 허용합니다. 현재 연결 시도는 `You need to add a Login Connection to your GitHub account first`로 실패했습니다. Vercel 프로젝트/배포 생성은 완료되지 않았습니다.
-2. [Supabase Dashboard](https://supabase.com/dashboard)에서 개발용 프로젝트를 생성합니다. 리전은 서울을 우선하고, 없다면 Vercel Function과 가까운 리전을 선택합니다. `vercel.json`의 현재 Function 리전은 `icn1`입니다.
+1. Vercel 프로젝트 `staycut-snap`과 [개발 화면 배포](https://staycut-snap.vercel.app)는 완료했습니다. 사용자 연결 후 재확인했지만 GitHub 저장소 연결은 `You need to add a Login Connection to your GitHub account first`로 계속 실패해 소스 직접 업로드 방식으로 배포했습니다. 자동 배포를 사용하려면 [Vercel Login Connections](https://vercel.com/account/authentication)에서 `devdevra` GitHub 계정 연결과 저장소 App 접근을 확인해야 합니다.
+2. [Supabase Dashboard](https://supabase.com/dashboard)에서 개발용 프로젝트를 생성합니다. 리전은 서울을 우선합니다. `vercel.json`은 `icn1`을 요청하지만 첫 배포의 API 응답에서 관측한 실행 리전은 `iad1`이므로, Supabase 리전 확정 후 Function 리전도 함께 맞춰 검증합니다.
 3. Supabase의 Project URL과 publishable key를 확인합니다. 비밀 키는 아래 Vercel 환경변수에 직접 입력합니다. DB 비밀번호·개인 토큰을 채팅이나 GitHub에 올리지 않습니다.
 
 ## Vercel 설정과 환경변수
 
-저장소 가져오기 시 **Root Directory는 저장소 루트**, Framework Preset은 Other, Node.js는 24.x로 둡니다. Build Command와 Output Directory는 `vercel.json`을 따릅니다. 현재 구현 브랜치는 `codex/staycut-v2-design`입니다. 기본 브랜치 `codex/staycut-planning`에는 앱 변경이 아직 합쳐지지 않았으므로, 첫 확인 배포는 구현 브랜치의 Preview로 진행합니다.
+저장소 가져오기 시 **Root Directory는 저장소 루트**, Framework Preset은 Other, Node.js는 24.x로 둡니다. Build Command와 Output Directory는 `vercel.json`을 따릅니다. 현재 구현 브랜치는 `codex/staycut-v2-design`입니다. 기본 브랜치 `codex/staycut-planning`에는 앱 변경이 아직 합쳐지지 않았으므로 자동 배포 연결 후에는 구현 브랜치를 지정해야 합니다.
+
+첫 직접 업로드 배포는 소스 커밋 `8d6f89e01fdbd622de4e78f35b3a2fae7b32d731`의 배포용 48개 파일을 Git blob 해시로 대조한 뒤 실행했습니다. Vercel이 신규 프로젝트의 첫 배포를 `production` 대상으로 생성하고 기본 `vercel.app` 별칭을 할당했습니다. 가상 데이터 데모이며 실제 고객 서비스의 운영 전환 완료를 의미하지 않습니다. [배포 검증 기록](deployment-status.json)에 대상·원본 커밋·확인 범위를 기록했습니다.
 
 | 환경변수 | 값과 용도 |
 | --- | --- |

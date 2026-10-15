@@ -1,0 +1,45 @@
+{
+  "verifiedAtUtc": "2026-10-15T15:10:45.990Z",
+  "sourceRepository": "devdevra/snap",
+  "sourceBranch": "codex/staycut-v2-design",
+  "sourceCommit": "8d6f89e01fdbd622de4e78f35b3a2fae7b32d731",
+  "sourceFiles": 48,
+  "sourceFilesMatchedRemoteGitBlobs": true,
+  "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
+  "deploymentId": "dpl_7SWGZgM3hVPPQW65YedTcToJQMfy",
+  "url": "https://staycut-snap.vercel.app",
+  "immutableUrl": "https://staycut-snap-2tfeqqh7h-jakes-projects-e2ded452.vercel.app",
+  "status": "READY",
+  "target": "production",
+  "deploymentMethod": "direct-file-upload",
+  "gitAutoDeployConnected": false,
+  "gitConnectionError": "You need to add a Login Connection to your GitHub account first.",
+  "checks": [
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "expectedHomeContent": true
+    },
+    {
+      "method": "GET",
+      "path": "/styles.css",
+      "status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/api/download",
+      "status": 405,
+      "allow": "POST",
+      "cacheControl": "no-store, private"
+    }
+  ],
+  "verificationMethod": "authenticated Vercel web fetch; independent generic web fetch could not access the URL",
+  "supabaseConnected": false,
+  "screenData": "fictional, tab-memory only",
+  "limitations": [
+    "No browser was run against the live deployment; identical source was previously verified in CI38750549206.",
+    "Live POST, video Range and real Supabase Auth/Storage HTTP flows are not yet verified.",
+    "Vercel returned production target and assigned the new project's default aliases; this serves a fictional demo, not a connected customer service."
+  ]
+}
