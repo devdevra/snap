@@ -63,7 +63,7 @@ function readToken(request) {
   return match[1];
 }
 
-async function readBody(request) {
+async function readBody(request, mode) {
   if (!/^application\/json(?:\s*;|\s*$)/i.test(header(request, 'content-type'))) {
     fail(415, 'JSON 형식으로 요청해 주세요.');
   }
@@ -95,12 +95,13 @@ async function readBody(request) {
     if (error instanceof DownloadError) throw error;
     fail(400, '요청 내용을 확인해 주세요.');
   }
+  const keys = mode === 'preview' ? ['versionId'] : ['versionId', 'channel', 'purpose'];
   if (!body || typeof body !== 'object' || Array.isArray(body)
-    || Object.keys(body).length !== 3
-    || Object.keys(body).some(key => !['versionId', 'channel', 'purpose'].includes(key))
+    || Object.keys(body).length !== keys.length
+    || Object.keys(body).some(key => !keys.includes(key))
     || typeof body.versionId !== 'string' || !UUID.test(body.versionId)
-    || !['instagram', 'youtube'].includes(body.channel)
-    || !['organic', 'advertising'].includes(body.purpose)) {
+    || (mode === 'download' && (!['instagram', 'youtube'].includes(body.channel)
+      || !['organic', 'advertising'].includes(body.purpose)))) {
     fail(400, '요청 내용을 확인해 주세요.');
   }
   return body;
@@ -153,8 +154,8 @@ function checkedSignedUrl(origin, payload, encodedPath) {
   return signed.href;
 }
 
-/** Injectable transport keeps authorization and signing tests entirely offline. */
-export function createDownloadHandler({ env = process.env, fetchImpl = globalThis.fetch, timeoutMs = 8000 } = {}) {
+/** Both routes retain end-user identity until the exact object is authorized. */
+function createPrivateLinkHandler(mode, { env = process.env, fetchImpl = globalThis.fetch, timeoutMs = 8000 } = {}) {
   return async function download(request, response) {
     response.setHeader('Cache-Control', 'no-store, private');
     response.setHeader('Pragma', 'no-cache');
@@ -169,7 +170,7 @@ export function createDownloadHandler({ env = process.env, fetchImpl = globalThi
         fail(405, 'POST 요청만 지원합니다.');
       }
       const token = readToken(request);
-      const input = await readBody(request);
+      const input = await readBody(request, mode);
       const config = readConfig(env);
       const userHeaders = { apikey: config.publicKey, Authorization: `Bearer ${token}` };
       const auth = await requestJson(fetchImpl, `${config.origin}/auth/v1/user`, {
@@ -178,14 +179,19 @@ export function createDownloadHandler({ env = process.env, fetchImpl = globalThi
       if (auth.status === 401 || auth.status === 403) fail(401, '다시 로그인해 주세요.');
       if (!auth.ok || !UUID.test(auth.data?.id ?? '')) fail(502, '로그인 정보를 확인할 수 없습니다.');
 
-      const authorization = await requestJson(fetchImpl, `${config.origin}/rest/v1/rpc/authorize_asset_download`, {
+      const rpcBody = mode === 'preview' ? { p_version_id: input.versionId }
+        : { p_version_id: input.versionId, p_channel: input.channel, p_purpose: input.purpose };
+      const authorization = await requestJson(fetchImpl, `${config.origin}/rest/v1/rpc/authorize_asset_${mode}`, {
         method: 'POST',
         headers: { ...userHeaders, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_version_id: input.versionId, p_channel: input.channel, p_purpose: input.purpose }),
+        body: JSON.stringify(rpcBody),
       }, timeoutMs);
       if (!authorization.ok) {
         if (authorization.status === 401) fail(401, '다시 로그인해 주세요.');
-        if (authorization.data?.code === '55000') fail(409, '승인·결제·이용 권한을 확인해 주세요.');
+        if (authorization.data?.code === '55000') {
+          fail(409, mode === 'preview' ? '최신 버전의 미리보기 준비 상태를 확인해 주세요.'
+            : '승인·결제·이용 권한을 확인해 주세요.');
+        }
         if (authorization.status === 403 || authorization.data?.code === '42501') {
           fail(403, '이 파일을 다운로드할 권한이 없습니다.');
         }
@@ -198,18 +204,38 @@ export function createDownloadHandler({ env = process.env, fetchImpl = globalThi
       const asset = authorization.data[0];
       if (asset?.bucket_id !== BUCKET) fail(502, '다운로드 파일 정보를 확인할 수 없습니다.');
       const encodedPath = encodeObjectPath(asset.object_path);
+      if (mode === 'preview') {
+        const parts = asset.object_path.split('/');
+        if (parts.length < 5 || !UUID.test(parts[0]) || !UUID.test(parts[1])
+          || parts[2].toLowerCase() !== input.versionId.toLowerCase() || parts[3] !== 'preview') {
+          fail(502, '미리보기 파일 정보를 확인할 수 없습니다.');
+        }
+      }
       const signed = await requestJson(fetchImpl, `${config.origin}/storage/v1/object/sign/${BUCKET}/${encodedPath}`, {
         method: 'POST',
         headers: { ...config.signingHeaders, 'Content-Type': 'application/json' },
         body: JSON.stringify({ expiresIn: LINK_TTL_SECONDS }),
       }, timeoutMs);
       if (!signed.ok) fail(502, '다운로드 링크를 만들 수 없습니다.');
-      body = { url: checkedSignedUrl(config.origin, signed.data, encodedPath), expiresIn: LINK_TTL_SECONDS };
+      const signedUrl = new URL(checkedSignedUrl(config.origin, signed.data, encodedPath));
+      if (mode === 'download') {
+        const filename = asset.object_path.split('/').at(-1)
+          .replace(/[^\p{L}\p{N}._-]/gu, '_').slice(0, 180) || 'delivery.mp4';
+        // Storage applies Content-Disposition for this parameter; cross-origin
+        // anchors cannot reliably force downloads with the HTML download attribute.
+        signedUrl.searchParams.set('download', filename);
+      }
+      body = { url: signedUrl.href, expiresIn: LINK_TTL_SECONDS };
     } catch (error) {
       status = error instanceof DownloadError ? error.status : 500;
-      body = { error: error instanceof DownloadError ? error.message : '다운로드 요청을 처리할 수 없습니다.' };
+      const message = error instanceof DownloadError ? error.message : '다운로드 요청을 처리할 수 없습니다.';
+      body = { error: mode === 'preview' ? message.replaceAll('다운로드', '미리보기') : message };
     }
     response.statusCode = status;
     response.end(JSON.stringify(body));
   };
 }
+
+/** Injectable transport keeps authorization and signing tests entirely offline. */
+export function createDownloadHandler(options) { return createPrivateLinkHandler('download', options); }
+export function createPreviewHandler(options) { return createPrivateLinkHandler('preview', options); }

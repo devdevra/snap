@@ -38,6 +38,8 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Browser flow and responsive captures
         run: npm run test:browser
+      - name: Authenticated customer flow with isolated fixtures
+        run: npm run test:auth-browser
       - name: Save browser evidence
         if: always()
         uses: actions/upload-artifact@v4

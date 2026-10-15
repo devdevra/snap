@@ -218,3 +218,40 @@ fieldset.field{border:0;padding:0}
 .step.is-complete{color:var(--ink);font-weight:650}
 @media(max-width:680px){.page-container>.page-heading{display:block}.page-heading h1{font-size:31px;line-height:1.4;letter-spacing:-1.2px}.page-heading .tag{margin-top:10px}.page-heading .muted{font-size:13px}.review-media{padding:17px;max-height:none}.review-media video{max-height:480px;aspect-ratio:9/16}.review-version-heading{align-items:flex-start}.review-version-heading h2{font-size:22px}.review-version-heading>.status-pill{font-size:11px;padding:4px 8px}.library-list-heading{align-items:flex-start;flex-direction:column;gap:7px}.metadata-list>div{grid-template-columns:82px minmax(0,1fr)}.modal .review-media{padding:12px}.home-assets .asset-facts{font-size:10px}.home-assets .asset-title{font-size:13px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+/* The customer portal is an explicit mode; the selected demo remains separate. */
+.account-entry{background:var(--sage);color:var(--green);border-radius:6px;padding:9px 13px;min-height:40px;font-size:12px;white-space:nowrap;flex-shrink:0}
+#app-nav[hidden]+.account-entry{margin-left:auto}
+.customer-login{display:grid;grid-template-columns:1.05fr 1fr;gap:80px;max-width:1200px;margin:0 auto;padding:84px 5.65% 96px;min-height:calc(100dvh - 210px);align-items:center}
+.customer-intro h1{font-size:49px;line-height:1.35;letter-spacing:-2px;margin:20px 0 24px}
+.customer-intro>p:not(.eyebrow){font-size:17px;line-height:1.9;color:var(--muted)}
+.customer-intro>p.muted{font-size:12px;margin-top:34px}
+.customer-login-card{padding:36px;border:1px solid var(--line);background:var(--white);border-radius:12px}
+.customer-login-card h2{font-size:26px;letter-spacing:-.9px;margin:8px 0 12px}
+.customer-login-card .field{margin-top:24px}
+.customer-login-card input{width:100%;min-width:0}
+.customer-login-card form>.btn{width:100%;margin-top:26px}
+.customer-login-card .customer-demo-link{font-size:12px;margin-top:22px}
+.customer-message{padding:14px 18px;background:var(--sage);border-radius:6px;font-size:13px;line-height:1.8;margin:20px 0}
+.customer-error{padding:12px 0;font-size:13px}
+.customer-workspace{min-height:calc(100dvh - 210px)}
+.customer-toolbar{display:flex;gap:20px;align-items:center;flex-shrink:0}
+.customer-toolbar .btn{min-height:40px;font-size:12px}
+.customer-toolbar .text-link{font-size:12px}
+.customer-tabs{flex-wrap:wrap}
+.customer-tabs button{display:flex;flex-direction:column;gap:4px;text-align:left;max-width:100%}
+.customer-tabs button small{font-size:11px;font-weight:400}
+.customer-review-layout{margin-bottom:35px}
+.customer-review-layout .review-media{min-height:380px;display:flex;align-items:center;justify-content:center}
+.customer-player{width:100%;text-align:center}
+.customer-media-icon{width:52px;height:52px;margin:0 auto 18px;filter:brightness(0) invert(1);opacity:.65}
+.customer-player>.btn{margin-top:24px;font-size:13px}
+.customer-player video{max-height:600px;max-width:100%;width:100%;aspect-ratio:9/16;background:#17382b}
+.customer-player .media-demo-note{margin-bottom:0}
+.customer-preserve{white-space:pre-wrap}
+.customer-scope{display:flex;gap:12px;flex-wrap:wrap}
+.customer-scope .field{flex:1;min-width:145px;margin-top:10px}
+.customer-scope select{width:100%;min-width:0}
+.customer-workspace .empty-state p+p{font-size:12px;margin-top:14px}
+@media(max-width:960px){.site-header{gap:18px}.header-caption{font-size:10px;padding-left:14px}#app-nav{gap:20px}.customer-login{gap:35px;padding-top:60px;padding-bottom:60px}.customer-intro h1{font-size:38px}.customer-login-card{padding:26px}}
+@media(max-width:680px){.site-header{gap:10px;padding:0 18px}.wordmark{font-size:23px}#app-nav{gap:7px}#app-nav button{font-size:11px;min-width:32px;padding:0 2px}.account-entry{padding:8px 10px;font-size:11px;min-height:36px}.customer-login{display:block;padding:34px 24px 42px;min-height:0}.customer-intro h1{font-size:36px;letter-spacing:-1.5px;margin:15px 0}.customer-intro>p:not(.eyebrow){font-size:14px}.customer-intro>p.muted{font-size:11px;margin-top:18px}.customer-login-card{margin-top:30px;padding:25px 22px}.customer-login-card h2{font-size:24px}.customer-toolbar{margin-top:18px;gap:24px}.customer-review-layout .review-media{min-height:320px}.customer-workspace .page-heading h1{font-size:29px}.customer-scope{flex-direction:column}.customer-player video{max-height:460px}}
+@media(max-width:360px){.site-header{padding:0 14px;gap:7px}.wordmark{font-size:20px}#app-nav{gap:4px}#app-nav button{font-size:10px;min-width:30px}.account-entry{font-size:10px;padding:8px}.customer-login{padding-right:18px;padding-left:18px}.customer-intro h1{font-size:31px}}

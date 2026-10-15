@@ -52,7 +52,7 @@ async function invoke({ request = {}, env = ENV, responses = upstream(), fetchIm
 test('authenticated user authorization precedes a server-only, 60-second signed link', async () => {
   const result = await invoke();
   assert.equal(result.statusCode, 200);
-  assert.deepEqual(result.body, { url: `${ORIGIN}${SIGN_PATH}?token=short-lived`, expiresIn: 60 });
+  assert.deepEqual(result.body, { url: `${ORIGIN}${SIGN_PATH}?token=short-lived&download=final.mp4`, expiresIn: 60 });
   assert.equal(result.headers['cache-control'], 'no-store, private');
   assert.equal(result.headers.pragma, 'no-cache');
   assert.equal(result.headers.vary, 'Authorization');
@@ -231,6 +231,23 @@ test('signer failure and unsafe returned URLs do not expose a download or upstre
     ...upstream().slice(0, 2), json({ signedUrl: `${ORIGIN}${SIGN_PATH}?token=valid` }),
   ] });
   assert.equal(sameOrigin.statusCode, 200);
+  assert.equal(new URL(sameOrigin.body.url).searchParams.get('download'), 'final.mp4');
+});
+
+test('download response sets a safe basename while preserving the verified token and object path', async () => {
+  const unsafeFilenamePath = `tenant/${VERSION_ID}/final\"copy;.mp4`;
+  const encodedPath = unsafeFilenamePath.split('/').map(encodeURIComponent).join('/');
+  const result = await invoke({ responses: [
+    json({ id: USER_ID }),
+    json([{ bucket_id: 'staycut-deliverables', object_path: unsafeFilenamePath }]),
+    json({ signedURL: `/object/sign/staycut-deliverables/${encodedPath}?token=valid` }),
+  ] });
+  assert.equal(result.statusCode, 200);
+  const url = new URL(result.body.url);
+  assert.equal(url.origin, ORIGIN);
+  assert.equal(url.pathname, `/storage/v1/object/sign/staycut-deliverables/${encodedPath}`);
+  assert.equal(url.searchParams.get('token'), 'valid');
+  assert.equal(url.searchParams.get('download'), 'final_copy_.mp4');
 });
 
 test('network errors and aborted requests return safe errors without leaking transport details', async () => {

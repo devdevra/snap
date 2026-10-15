@@ -3,6 +3,7 @@ import {
   approvalBlockReason, downloadBlockReason, rightsBlockReason, accessBlockReason,
   validDate, validOptionalUrl,
 } from './domain.js';
+import { initCustomerPortal } from './auth.js';
 
 const state = createInitialState();
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -17,6 +18,7 @@ const now = () => new Date().toISOString();
 const statusPill = (asset) => `<span class="status-pill ${asset.approvalStatus === 'approved' ? 'is-approved' : ''}">${escape(labelStatus(asset))} · v${asset.version}</span>`;
 let toastTimer;
 let modalReturnFocus;
+let customerPortal;
 
 function toast(message) {
   const element = $('#toast');
@@ -178,6 +180,8 @@ function renderLibrary() {
 function render() { renderHome(); renderReview(); renderLibrary(); }
 
 function showPage(page, { focus = true, updateHash = true } = {}) {
+  if (page === 'account' && customerPortal) { customerPortal.open({ focus, updateHash }); return; }
+  customerPortal?.leave();
   if (!['home', 'review', 'content'].includes(page)) page = 'home';
   state.activePage = page;
   document.querySelectorAll('section[data-page]').forEach((section) => { section.hidden = section.dataset.page !== page; });
@@ -198,6 +202,7 @@ function openModal(title, body, { wide = false } = {}) {
   document.body.classList.add('modal-open');
   $('#main-content')?.setAttribute('inert', '');
   $('#app-nav')?.setAttribute('inert', '');
+  $('#account-entry')?.setAttribute('inert', '');
   $('#dialog-title')?.focus();
   bindMediaErrors(root);
 }
@@ -209,6 +214,7 @@ function closeModal() {
   document.body.classList.remove('modal-open');
   $('#main-content')?.removeAttribute('inert');
   $('#app-nav')?.removeAttribute('inert');
+  $('#account-entry')?.removeAttribute('inert');
   if (modalReturnFocus?.isConnected) modalReturnFocus.focus();
   else $('#main-content')?.focus({ preventScroll: true });
 }
@@ -444,4 +450,5 @@ document.addEventListener('keydown', (event) => {
 
 window.addEventListener('hashchange', () => showPage(location.hash.slice(1), { updateHash: false }));
 render();
+customerPortal = initCustomerPortal({ showDemo: () => showPage('home'), beforeOpen: closeModal });
 showPage(location.hash.slice(1) || 'home', { focus: false });

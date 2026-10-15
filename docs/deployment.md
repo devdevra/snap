@@ -21,11 +21,12 @@ flowchart LR
 | Vercel 빌드 설정 | `vercel.json`, Node 24 권장, `npm run build` → `dist` |
 | 숙소별 DB 격리 · 승인/수정 RPC | 마이그레이션 준비, 외부 프로젝트에는 미적용 |
 | 비공개 다운로드 API | 사용자 인증·권한 검사 후 60초 서명 링크 발급 코드와 오프라인 테스트 준비 |
-| 실제 로그인 · 화면의 DB 조회/저장 | 프로젝트 연결 후 구현 필요 |
-| 업로드 · 권한 있는 미리보기 · 게시 기록 저장 | 후속 구현 필요 |
+| 실제 로그인 · 화면의 DB 조회/저장 | 코드 연결 완료, DB 적용·계정/작업 배정 필요 |
+| 권한 있는 미리보기 | 별도 검토용 파일의 전용 RPC/API 구현, 서버 서명 키·파일 등록 필요 |
+| 업로드 · 게시 기록 저장 | 후속 구현 필요 |
 | 실제 결제 · 이메일 · SNS 게시 | 미연동 |
 
-새 API는 현재 데모 화면에서 호출하지 않습니다. 환경변수를 입력하는 것만으로 데모 데이터가 실데이터로 바뀌거나 승인이 DB에 저장되지는 않습니다. 공개 `portal/assets/`는 가상 숙소 샘플 전용이며 실제 고객 파일을 이 폴더에 넣지 않습니다.
+체험 홈과 실제 고객 모드 `/#account`를 구분합니다. 로그인한 고객 모드는 Supabase Auth·RLS·RPC를 호출하고, 체험 홈의 가상 입력은 서버에 저장하지 않습니다. 공개 `portal/assets/`는 가상 숙소 샘플 전용이며 실제 고객 파일을 이 폴더에 넣지 않습니다.
 
 ## 계정 연결
 
@@ -45,7 +46,7 @@ flowchart LR
 | `SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_…`, 사용자 JWT와 함께 인증/권한 RPC 호출 |
 | `SUPABASE_SECRET_KEY` | `sb_secret_…`, 서버에서 허가된 파일의 링크 서명에만 사용 |
 
-신규 프로젝트는 [공식 API 키 안내](https://supabase.com/docs/guides/getting-started/api-keys)의 publishable/secret 키를 사용합니다. 기존 프로젝트의 `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`도 호환하지만 새 구성에는 필요하지 않습니다. 비밀 키에는 공개 번들용 접두사를 붙이지 않습니다. 현재 정적 빌드는 환경변수를 브라우저 파일에 삽입하지 않습니다.
+신규 프로젝트는 [공식 API 키 안내](https://supabase.com/docs/guides/getting-started/api-keys)의 publishable/secret 키를 사용합니다. 기존 프로젝트의 `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`도 파일 API에서 호환하지만 새 구성에는 필요하지 않습니다. 비밀 키에는 공개 번들용 접두사를 붙이지 않습니다. Vercel 연결 도구의 환경변수 조회·등록이 403으로 거부되어 제공받은 URL과 공개 키는 `portal/public-config.json`을 사용합니다. 서버도 이 두 공개 값만 기본값으로 읽으며, 비밀 키는 서버 환경변수에서만 읽습니다.
 
 Preview/Development에는 개발용 Supabase를 연결하고 Production에는 별도 운영 프로젝트를 연결합니다. 비밀 키는 Vercel의 Secret 환경변수로 저장합니다. `.env.example`에는 변수 이름만 있으며 `.env.local`과 `.vercel/`은 Git에서 제외합니다.
 
@@ -62,7 +63,7 @@ supabase db push
 
 위 명령은 아직 실행하지 않았습니다. `supabase/tests/`는 임시 CI DB 전용으로 실제 프로젝트에 적용하지 않습니다. 마이그레이션 이후 테스트 사용자를 생성하고, 신뢰된 운영자 경로로 숙소·멤버십·계약·파일을 배정해야 합니다. 계정 가입만으로 고객사 접근 권한이 생기지 않습니다.
 
-이후 로그인 화면 → 사용자 JWT로 숙소/작업 조회 → 승인·수정 RPC 연결 → 비공개 미리보기/다운로드 → 새로고침 후 저장 상태 유지 순서로 실제 서비스를 연결합니다. 실제 Auth·Storage·Vercel 전체 흐름 검증 전에는 운영 전환이 완료된 것으로 보지 않습니다.
+로그인 화면 → 사용자 JWT로 숙소/작업 조회 → 승인·수정 RPC → 비공개 미리보기/다운로드를 구현했습니다. 실제 프로젝트는 공개 설정·인증 서버 접근을 확인했으나 테이블이 없는 상태입니다. [관리자 설정](supabase-setup.md) 적용 후 실제 사용자로 저장·새로고침·파일 전달을 검증해야 합니다. 실제 Auth·Storage·Vercel 전체 흐름 검증 전에는 운영 전환이 완료된 것으로 보지 않습니다.
 
 ## 다운로드 API
 

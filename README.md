@@ -8,7 +8,7 @@
 
 ## 고객 포털 개발 · 선택 시안 2번
 
-[Vercel에서 개발 화면 열기](https://staycut-snap.vercel.app) · 현재는 가상 숙소 데이터 체험 화면이며 실제 로그인·서버 저장은 아직 연결하지 않았습니다. GitHub 자동 배포 연결 오류가 남아 검증한 소스를 직접 업로드해 배포했습니다.
+[Vercel에서 개발 화면 열기](https://staycut-snap.vercel.app) · 체험 홈은 가상 데이터이며, 고객 로그인·RLS 조회·승인/수정 저장 코드를 별도 실제 고객 모드로 연결했습니다. 실제 DB 적용·고객 배정·서명 키 설정은 [관리자 안내](docs/supabase-setup.md)를 참고하세요. GitHub 자동 배포 연결 오류가 남아 소스를 직접 업로드해 배포합니다.
 
 [고객 포털 소스와 실행 안내](portal/README.md)에서 상단 탐색과 큰 숙소 사진을 사용한 반응형 프로토타입을 개발합니다. 홈 → 영상 검토·통합 수정 요청·정확한 버전 승인 → 게시용 콘텐츠·샘플 다운로드 → 게시 응답·재편집 문의를 연결했습니다.
 
@@ -18,11 +18,11 @@ npm test
 npm run build
 ```
 
-외부 npm 설치 없이 Node.js 22.8 이상에서 실행합니다. 도메인 테스트 26개·정적 빌드·실제 Chromium 검증 6개 항목이 통과했습니다. 화면과 상세 검증 상태는 [디자인 검수 기록](portal/design-qa.md)과 GitHub Actions 결과를 확인합니다. 모든 데이터는 가상 예시이고 현재 탭에만 유지됩니다. 실제 고객 계정·서버 저장·결제·SNS 게시 연동은 포함하지 않습니다.
+외부 npm 의존성 없이 Node.js 24.x에서 실행합니다. 도메인 26개·Auth 클라이언트 12개·파일 API/설정 26개의 단위 테스트와 정적 빌드가 통과했습니다. 기존 체험 화면의 Chromium 검증 6개에 모의 인증 고객 흐름 4개를 추가했습니다. 현재 프로젝트의 실제 사용자/DB 전체 검증은 관리자 설정 후 진행합니다. 실제 결제·SNS 게시 연동은 없습니다.
 
 ## 개발 환경 · Vercel + Supabase
 
-앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 배포 설정·승인 RPC·다운로드 API 기반을 준비했으며 실제 프로젝트 연결과 로그인/화면 데이터 연결은 아직 완료되지 않았습니다.
+앱/API는 Vercel, 로그인·DB·비공개 파일은 관리형 Supabase로 진행합니다. [연결 상태와 배포 안내](docs/deployment.md), [Supabase 데이터 기반](supabase/README.md)을 참고하세요. 제공받은 프로젝트의 공개 키와 Auth 접근은 확인했습니다. 테이블이 없어 새 DB 적용이 필요하며, 계정·멤버십·작업·검토용 파일 배정과 Vercel 서버 서명 키 등록도 남아 있습니다.
 
 [기반 검증 CI](https://github.com/devdevra/snap/actions/runs/38750549206)에서 도메인 26개·다운로드 API 12개·DB 권한 회귀 판정 77개·빌드·Chromium 6개 항목이 통과했습니다. 실제 Vercel/Supabase 연결 검증은 계정 연결 후 진행합니다.
 

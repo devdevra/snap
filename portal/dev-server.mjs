@@ -3,20 +3,26 @@ import { createReadStream } from 'node:fs';
 import { stat, realpath } from 'node:fs/promises';
 import { dirname, resolve, sep, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import configHandler from '../api/config.js';
+import healthHandler from '../api/health.js';
+import previewHandler from '../api/preview.js';
+import downloadHandler from '../api/download.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
 const host = arg('--host', '127.0.0.1');
 const port = Number(arg('--port', '4173'));
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff': 'font/woff', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8' };
+const apiRoutes = { '/api/config': configHandler, '/api/health': healthHandler, '/api/preview': previewHandler, '/api/download': downloadHandler };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'no-store');
-  if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }); res.end('Method not allowed'); return; }
   try {
     const hostname = new URL(`http://${req.headers.host || 'localhost'}`).hostname;
     if (!['localhost', 'terminal.local', '127.0.0.1', '0.0.0.0', '[::1]'].includes(hostname)) { res.writeHead(403); res.end('Host not allowed'); return; }
     const url = new URL(req.url, 'http://localhost');
+    if (Object.hasOwn(apiRoutes, url.pathname)) { await apiRoutes[url.pathname](req, res); return; }
+    if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }); res.end('Method not allowed'); return; }
     const pathname = decodeURIComponent(url.pathname);
     const candidate = resolve(root, `.${pathname === '/' ? '/index.html' : pathname}`);
     const path = await realpath(candidate);

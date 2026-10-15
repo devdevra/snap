@@ -19,8 +19,10 @@ insert into public.assets(id,tenant_id,title,assigned_approver_id,access_allowed
  ('00000000-0000-4000-8000-000000000301','00000000-0000-4000-8000-000000000001','A main','00000000-0000-4000-8000-000000000101',true,current_date-30,current_date+30,'valid',current_date-30,current_date+30,array['instagram'],array['organic']),
  ('00000000-0000-4000-8000-000000000302','00000000-0000-4000-8000-000000000002','B main','00000000-0000-4000-8000-000000000201',true,current_date-30,current_date+30,'valid',current_date-30,current_date+30,array['instagram'],array['organic']),
  ('00000000-0000-4000-8000-000000000303','00000000-0000-4000-8000-000000000001','A revision','00000000-0000-4000-8000-000000000101',true,current_date-30,current_date+30,'valid',current_date-30,current_date+30,array['instagram'],array['organic']);
-insert into public.asset_versions(id,asset_id,tenant_id,version_number,preview_available,delivery_available,object_path,content_sha256)
- select v.id,a.id,a.tenant_id,v.number,true,true,a.tenant_id::text||'/'||a.id::text||'/'||v.id::text||'/delivery.mp4',repeat('a',64)
+insert into public.asset_versions(id,asset_id,tenant_id,version_number,preview_available,delivery_available,object_path,content_sha256,preview_object_path,preview_content_sha256)
+ select v.id,a.id,a.tenant_id,v.number,true,true,
+ a.tenant_id::text||'/'||a.id::text||'/'||v.id::text||'/delivery.mp4',repeat('a',64),
+ a.tenant_id::text||'/'||a.id::text||'/'||v.id::text||'/preview/review.mp4',repeat('c',64)
  from (values
   ('00000000-0000-4000-8000-000000000401'::uuid,'00000000-0000-4000-8000-000000000301'::uuid,1),
   ('00000000-0000-4000-8000-000000000402'::uuid,'00000000-0000-4000-8000-000000000301'::uuid,2),
@@ -38,8 +40,14 @@ select test.ok(staycut_private.contract_today() = (statement_timestamp() at time
 select test.ok((select not public from storage.buckets where id='staycut-deliverables'),'delivery bucket is private');
 select test.ok(not has_function_privilege('anon','public.authorize_asset_download(uuid,text,text)','EXECUTE'),'anonymous cannot execute download authorization');
 select test.ok(not has_function_privilege('service_role','public.authorize_asset_download(uuid,text,text)','EXECUTE'),'service signer cannot substitute for user RPC');
+select test.ok(not has_function_privilege('anon','public.authorize_asset_preview(uuid)','EXECUTE'),'anonymous cannot execute preview authorization');
+select test.ok(not has_function_privilege('service_role','public.authorize_asset_preview(uuid)','EXECUTE'),'service signer cannot substitute for preview user RPC');
 select test.ok(not has_function_privilege('authenticated','staycut_private.assert_scope(public.assets,text,text)','EXECUTE'),'private internal helper not callable');
 select test.throws($q$update public.assets set latest_version_id='00000000-0000-4000-8000-000000000403' where id='00000000-0000-4000-8000-000000000301'$q$,'23503','latest version must belong to exact asset and tenant');
+select test.throws($q$update public.asset_versions set preview_object_path=object_path where id='00000000-0000-4000-8000-000000000401'$q$,'23514','preview cannot point to original delivery object');
+select test.throws($q$update public.asset_versions set preview_content_sha256=content_sha256 where id='00000000-0000-4000-8000-000000000401'$q$,'23514','preview cannot contain exact original bytes');
+select test.throws($q$update public.asset_versions set preview_content_sha256=null where id='00000000-0000-4000-8000-000000000401'$q$,'23514','partial preview metadata rejected');
+select test.throws($q$update public.asset_versions set preview_object_path=replace(preview_object_path,'/preview/','/another/') where id='00000000-0000-4000-8000-000000000401'$q$,'23514','preview must use dedicated version preview namespace');
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000101',true);
 set local role authenticated;
@@ -55,6 +63,11 @@ select test.throws($q$insert into public.version_approvals(version_id) values ('
 select test.throws($q$delete from public.tenant_members$q$,'42501','client cannot edit memberships');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000403','instagram','organic',true)$q$,'42501','cross-tenant approval denied');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000403','instagram','organic')$q$,'42501','cross-tenant download denied');
+select test.ok((select bucket_id='staycut-deliverables' and object_path like '%/00000000-0000-4000-8000-000000000402/preview/review.mp4' from public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')),'pending unpaid latest version returns separate preview file');
+select test.ok((select p.object_path<>v.object_path from public.authorize_asset_preview('00000000-0000-4000-8000-000000000402') p join public.asset_versions v on v.id='00000000-0000-4000-8000-000000000402'),'preview authorization never returns original delivery path');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000403')$q$,'42501','cross-tenant preview denied');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000999')$q$,'42501','unknown preview UUID denied without revealing existence');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000401')$q$,'55000','superseded preview version denied');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000401','instagram','organic',true)$q$,'55000','stale version approval denied');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',false)$q$,'22023','unchecked confirmation denied');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',null)$q$,'22023','null confirmation denied');
@@ -71,29 +84,35 @@ with changed as (update storage.buckets set public=true where id='staycut-delive
 select test.throws($q$insert into storage.objects(bucket_id,name) values ('staycut-deliverables','client-upload.mp4')$q$,'42501','browser upload to delivery bucket denied');
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000102',true);
+select test.ok((select count(*)=1 from public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')),'ordinary active member may preview without being assigned approver');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'42501','ordinary member cannot act as assigned approver');
 select test.throws($q$select public.request_asset_revision('00000000-0000-4000-8000-000000000404','Fix caption')$q$,'42501','ordinary member cannot submit assigned review');
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000103',true);
 select test.ok((select count(*)=0 from public.assets),'inactive membership hides assets');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','inactive member cannot preview');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'42501','inactive approver denied');
 select set_config('request.jwt.claim.sub','',true);
 select test.ok((select count(*)=0 from public.tenants),'authenticated role with no actor sees no tenant');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000402','instagram','organic')$q$,'42501','missing actor cannot authorize download');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','missing actor cannot authorize preview');
 reset role;
 
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000101',true);
 update public.assets set access_allowed=false where id='00000000-0000-4000-8000-000000000301';
 set local role authenticated;
 select test.ok((select count(*)=0 from public.asset_versions where asset_id='00000000-0000-4000-8000-000000000301'),'revoked asset access hides versions');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','revoked asset access denies preview');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'42501','revoked asset access denies approval');
 reset role;
 update public.assets set access_allowed=true,access_end_date=current_date-2 where id='00000000-0000-4000-8000-000000000301';
 set local role authenticated;
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'42501','expired asset access denies approval');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','expired asset access denies preview');
 reset role;
 update public.assets set access_end_date=current_date+30,rights_end_date=current_date-2 where id='00000000-0000-4000-8000-000000000301';
 set local role authenticated;
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'55000','expired usage rights deny approval');
+select test.ok((select count(*)=1 from public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')),'expired publication rights do not block internal review preview');
 reset role;
 update public.assets set rights_end_date=current_date+30,rights_start_date=current_date+2 where id='00000000-0000-4000-8000-000000000301';
 set local role authenticated;
@@ -104,16 +123,21 @@ set local role authenticated;
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'55000','unconfirmed rights deny approval');
 reset role;
 update public.assets set rights_status='valid' where id='00000000-0000-4000-8000-000000000301';
-update public.asset_versions set preview_available=false where id='00000000-0000-4000-8000-000000000402';
+update public.asset_versions set preview_available=false,preview_object_path=null,preview_content_sha256=null where id='00000000-0000-4000-8000-000000000402';
+select test.throws($q$update public.asset_versions set preview_available=true where id='00000000-0000-4000-8000-000000000402'$q$,'23514','preview cannot be ready without separate path and hash');
 set local role authenticated;
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'55000','missing preview denies approval');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'55000','missing separate preview never falls back to original');
 reset role;
-update public.asset_versions set preview_available=true where id='00000000-0000-4000-8000-000000000402';
+update public.asset_versions set preview_available=true,
+ preview_object_path=tenant_id::text||'/'||asset_id::text||'/'||id::text||'/preview/review.mp4',
+ preview_content_sha256=repeat('c',64) where id='00000000-0000-4000-8000-000000000402';
 
 set local role authenticated;
 select test.ok(public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)->>'version_id'='00000000-0000-4000-8000-000000000402','valid assigned approval succeeds before payment');
 select test.ok((select count(*)=1 from public.version_approvals),'exactly one immutable approval created');
 select test.ok((select review_status='approved' from public.asset_versions where id='00000000-0000-4000-8000-000000000402'),'approval and review state change together');
+select test.ok((select count(*)=1 from public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')),'approved version remains previewable before payment');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'55000','duplicate approval denied');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000402','instagram','organic')$q$,'55000','approval does not bypass payment');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000401','instagram','organic')$q$,'55000','approval is not inherited by an old version');
@@ -123,6 +147,8 @@ select test.throws($q$delete from public.version_approvals$q$,'55000','approval 
 select test.throws($q$truncate public.version_approvals$q$,'55000','approval history cannot be truncated');
 select test.throws($q$update public.asset_versions set content_sha256=repeat('b',64) where id='00000000-0000-4000-8000-000000000402'$q$,'55000','approved file content cannot be replaced under same version');
 select test.throws($q$update public.asset_versions set object_path=replace(object_path,'delivery.mp4','replacement.mp4') where id='00000000-0000-4000-8000-000000000402'$q$,'55000','approved storage path immutable');
+select test.throws($q$update public.asset_versions set preview_object_path=replace(preview_object_path,'review.mp4','replacement.mp4') where id='00000000-0000-4000-8000-000000000402'$q$,'55000','approved preview path immutable');
+select test.throws($q$update public.asset_versions set preview_content_sha256=repeat('d',64) where id='00000000-0000-4000-8000-000000000402'$q$,'55000','approved preview content hash immutable');
 update public.assets set final_delivery_paid=true where id='00000000-0000-4000-8000-000000000301';
 set local role authenticated;
 select test.ok((select bucket_id='staycut-deliverables' and object_path like '%/00000000-0000-4000-8000-000000000402/delivery.mp4' from public.authorize_asset_download('00000000-0000-4000-8000-000000000402','instagram','organic')),'paid exact approved version returns only private storage location');
@@ -132,6 +158,7 @@ reset role;
 update public.tenant_members set access_end_date=current_date-2 where user_id='00000000-0000-4000-8000-000000000102';
 set local role authenticated;
 select test.ok((select count(*)=0 from public.tenants),'expired membership hides tenant');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','expired membership denies preview');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000402','instagram','organic')$q$,'42501','expired membership denies download');
 reset role;
 select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000101',true);
@@ -151,11 +178,13 @@ select test.throws($q$select public.request_asset_revision('00000000-0000-4000-8
 select test.throws($q$select public.request_asset_revision('00000000-0000-4000-8000-000000000404',E'\t\n\r')$q$,'22023','whitespace-only revision rejected');
 select test.ok(public.request_asset_revision('00000000-0000-4000-8000-000000000404','Please fix caption')->>'version_id'='00000000-0000-4000-8000-000000000404','valid revision request succeeds');
 select test.ok((select review_status='revision_requested' from public.asset_versions where id='00000000-0000-4000-8000-000000000404'),'revision and review state change together');
+select test.ok((select count(*)=1 from public.authorize_asset_preview('00000000-0000-4000-8000-000000000404')),'latest version with a revision request remains previewable');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000404','instagram','organic',true)$q$,'55000','revision request blocks approval');
 reset role;
-insert into public.asset_versions(id,asset_id,tenant_id,version_number,preview_available,delivery_available,object_path,content_sha256)
+insert into public.asset_versions(id,asset_id,tenant_id,version_number,preview_available,delivery_available,object_path,content_sha256,preview_object_path,preview_content_sha256)
  select '00000000-0000-4000-8000-000000000405',id,tenant_id,2,true,true,
- tenant_id::text||'/'||id::text||'/00000000-0000-4000-8000-000000000405/delivery.mp4',repeat('b',64)
+ tenant_id::text||'/'||id::text||'/00000000-0000-4000-8000-000000000405/delivery.mp4',repeat('b',64),
+ tenant_id::text||'/'||id::text||'/00000000-0000-4000-8000-000000000405/preview/review.mp4',repeat('d',64)
  from public.assets where id='00000000-0000-4000-8000-000000000303';
 update public.assets set latest_version_id='00000000-0000-4000-8000-000000000405' where id='00000000-0000-4000-8000-000000000303';
 set local role authenticated;
@@ -177,10 +206,12 @@ set local role anon;
 select test.throws($q$select * from public.assets$q$,'42501','anonymous cannot read portal data');
 select test.throws($q$select public.approve_asset_version('00000000-0000-4000-8000-000000000402','instagram','organic',true)$q$,'42501','anonymous cannot approve');
 select test.throws($q$select public.authorize_asset_download('00000000-0000-4000-8000-000000000402','instagram','organic')$q$,'42501','anonymous cannot authorize download');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','anonymous cannot authorize preview');
 select test.ok((select count(*)=0 from storage.objects where bucket_id='staycut-deliverables'),'anonymous cannot read private objects despite broad policy');
 reset role;
 set local role service_role;
 select test.ok((select count(*)=1 from storage.objects where bucket_id='staycut-deliverables'),'trusted service signer retains storage access');
+select test.throws($q$select public.authorize_asset_preview('00000000-0000-4000-8000-000000000402')$q$,'42501','service role cannot bypass user identity for preview RPC');
 select test.throws($q$insert into public.version_approvals(version_id) values ('00000000-0000-4000-8000-000000000401')$q$,'42501','service role cannot forge user approval through direct insert');
 reset role;
 

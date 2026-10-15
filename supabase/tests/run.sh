@@ -18,5 +18,6 @@ if [[ "$schema_count" != "0" ]]; then
   exit 1
 fi
 "${PSQL[@]}" --file=supabase/tests/bootstrap.sql
-"${PSQL[@]}" --file=supabase/migrations/202610150001_portal_foundation.sql
+python3 supabase/scripts/build_setup.py --check
+"${PSQL[@]}" --file=supabase/setup.sql
 "${PSQL[@]}" --file=supabase/tests/regression.sql
