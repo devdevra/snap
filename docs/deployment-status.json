@@ -1,5 +1,5 @@
 {
-  "verifiedAtUtc": "2026-10-15T16:58:27.712Z",
+  "verifiedAtUtc": "2026-10-15T17:10:43.732Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
   "sourceCommit": "bd5472edac0796815858375091dcd499a49fb3e4",
@@ -44,8 +44,8 @@
       "serverDatabaseStatus": "ready",
       "privateStorageReady": true,
       "privateStorageStatus": "ready",
-      "operatorSchemaReady": false,
-      "operatorSchemaStatus": "missing_schema"
+      "operatorSchemaReady": true,
+      "operatorSchemaStatus": "ready"
     },
     {
       "method": "GET",
@@ -84,7 +84,7 @@
   },
   "limitations": [
     "User reported successful real customer login; live user-authorized approval/revision and actual file delivery remain unverified.",
-    "New operator migration is not applied to the external project: operatorSchemaStatus=missing_schema. Private atomic migration plus explicitly selected operator assignment is prepared for the administrator.",
+    "Operator schema is verified ready after user-reported SQL installation; authenticated operator console access and real media upload/delivery remain unverified.",
     "Operator browser tests use isolated Auth/API/Storage mocks; PostgreSQL tests are disposable. No real customer data or media was created.",
     "MP4/WebM only, max50MiB per file, original and distinct manually produced preview required; no transcoder/resumable large-file uploads/automatic orphan cleanup.",
     "Existing customer membership administration beyond initial assignment still requires trusted administration; customer owner does not become a system operator.",
@@ -166,13 +166,13 @@
       "demoBrowserSuites": 6,
       "mockCustomerBrowserSuites": 4
     },
-    "actualAssignmentExecuted": false,
-    "actualUserLoginVerified": false
+    "actualUserLoginVerified": false,
+    "actualAssignmentVerified": false
   },
   "operatorUrl": "https://staycut-snap.vercel.app/#manage",
-  "operatorSchemaReady": false,
-  "operatorSchemaStatus": "missing_schema",
-  "operatorUpgradeStatus": "private_atomic_migration_and_operator_assignment_prepared_administrator_execution_pending",
+  "operatorSchemaReady": true,
+  "operatorSchemaStatus": "ready",
+  "operatorUpgradeStatus": "user_reported_atomic_installer_executed_schema_verified_ready",
   "operatorLiveUploadVerified": false,
   "operatorFeatures": [
     "separate_active_operator_role",
@@ -183,5 +183,6 @@
     "observed_latest_and_revision_guards",
     "new_versions_without_erasing_approval_history",
     "audited_access_rights_payment_terms_updates"
-  ]
+  ],
+  "operatorRoleAssignmentStatus": "user_reported_installer_executed_authenticated_console_check_pending"
 }
