@@ -87,3 +87,5 @@ npm run build
 GitHub Actions는 기존 Chromium 흐름과 별도로 임시 PostgreSQL 16에서 실제 마이그레이션/RLS/RPC 회귀 SQL을 실행합니다. Auth·Storage는 최소 인터페이스 스텁이므로 실제 Supabase 토큰 발급이나 Storage HTTP 연결을 대신 검증하지 않습니다.
 
 2026-10-15 검증 결과: [GitHub Actions 38750549206](https://github.com/devdevra/snap/actions/runs/38750549206), 코드 커밋 `4ee8123d2d67a8c4173823a4069546a9e063d91a`에서 도메인 26개·다운로드 API 12개·DB 회귀 판정 77개·정적 빌드·Chromium 6개 항목이 모두 통과했습니다. `.vercelignore` 경로도 별도 확인하여 실제 포털 HTML/미디어/API/빌드 파일은 포함하고 루트 기획 HTML·자료·로컬 환경변수는 제외했습니다. 실제 Vercel/Supabase 종단 연결 검증은 아직 수행하지 않았습니다.
+
+2026-10-16 갱신: [고객 모드 CI](https://github.com/devdevra/snap/actions/runs/38760315115), 코드 `984b83387eb4b2b30f4a66e8a7a662ca320e6e0c`에서 단위 64개·DB 판정 103개·기존 브라우저 6개·모의 Auth/REST 브라우저 4개가 모두 통과했습니다. 신규 설치 파일 `supabase/setup.sql` 자체를 CI 임시 DB에 적용해 검증했으며, 실제 외부 DB에는 적용하지 않았습니다. 모바일 승인/데스크톱 수정 요청 캡처를 시각 확인했습니다. 최종 배포 홈에는 로그인 진입이 있고 `/api/config` 값이 제공된 프로젝트와 일치하며 `/api/health`는 Auth 정상·DB `missing_schema`를 반환합니다. 실제 사용자 로그인·Storage 연결·승인 저장 종단 확인은 남아 있습니다.

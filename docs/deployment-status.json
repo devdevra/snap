@@ -1,45 +1,72 @@
 {
-  "verifiedAtUtc": "2026-10-15T15:10:45.990Z",
+  "verifiedAtUtc": "2026-10-15T15:30:11.772Z",
   "sourceRepository": "devdevra/snap",
   "sourceBranch": "codex/staycut-v2-design",
-  "sourceCommit": "8d6f89e01fdbd622de4e78f35b3a2fae7b32d731",
-  "sourceFiles": 48,
+  "sourceCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
+  "sourceFiles": 56,
   "sourceFilesMatchedRemoteGitBlobs": true,
   "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
-  "deploymentId": "dpl_7SWGZgM3hVPPQW65YedTcToJQMfy",
+  "team": "jake's projects",
+  "teamSlug": "jakes-projects-e2ded452",
+  "deploymentId": "dpl_5txz56YnDh5X2FHydkpDmLDXX6vG",
   "url": "https://staycut-snap.vercel.app",
-  "immutableUrl": "https://staycut-snap-2tfeqqh7h-jakes-projects-e2ded452.vercel.app",
+  "customerUrl": "https://staycut-snap.vercel.app/#account",
+  "immutableUrl": "https://staycut-snap-lyujx8269-jakes-projects-e2ded452.vercel.app",
   "status": "READY",
   "target": "production",
   "deploymentMethod": "direct-file-upload",
   "gitAutoDeployConnected": false,
-  "gitConnectionError": "You need to add a Login Connection to your GitHub account first.",
+  "supabaseProject": "adyhefvhfabwkfdwwjiz",
+  "supabasePublicConfigConnected": true,
+  "supabaseAuthSettingsReachable": true,
+  "supabaseDatabaseStatus": "missing_schema",
+  "supabaseLiveUserFlowVerified": false,
+  "privateSigningKeyVerified": false,
+  "environmentVariableToolStatus": "list/create both denied403; only public URL/key use tracked public-config.json",
   "checks": [
     {
       "method": "GET",
       "path": "/",
       "status": 200,
-      "expectedHomeContent": true
+      "loginEntryPresent": true,
+      "customerSectionPresent": true
     },
     {
       "method": "GET",
-      "path": "/styles.css",
-      "status": 200
+      "path": "/api/config",
+      "status": 200,
+      "publicValuesMatchProvidedProject": true
     },
     {
       "method": "GET",
-      "path": "/api/download",
+      "path": "/api/health",
+      "status": 200,
+      "configured": true,
+      "authReady": true,
+      "databaseReady": false,
+      "databaseStatus": "missing_schema"
+    },
+    {
+      "method": "GET",
+      "path": "/api/preview",
       "status": 405,
       "allow": "POST",
       "cacheControl": "no-store, private"
     }
   ],
-  "verificationMethod": "authenticated Vercel web fetch; independent generic web fetch could not access the URL",
-  "supabaseConnected": false,
-  "screenData": "fictional, tab-memory only",
+  "ci": {
+    "url": "https://github.com/devdevra/snap/actions/runs/38760315115",
+    "codeCommit": "984b83387eb4b2b30f4a66e8a7a662ca320e6e0c",
+    "unitTests": 64,
+    "databaseAssertions": 103,
+    "demoBrowserSuites": 6,
+    "mockCustomerBrowserSuites": 4,
+    "status": "passed"
+  },
   "limitations": [
-    "No browser was run against the live deployment; identical source was previously verified in CI38750549206.",
-    "Live POST, video Range and real Supabase Auth/Storage HTTP flows are not yet verified.",
-    "Vercel returned production target and assigned the new project's default aliases; this serves a fictional demo, not a connected customer service."
+    "Browser Auth/REST flows were verified with isolated mocks, not a real customer account.",
+    "Real DB schema/memberships/assets and server signing key still need administrator setup.",
+    "Separate reduced/watermarked preview files must be prepared and uploaded; no automatic transcoder/admin UI.",
+    "Actual payment processing, publication/reuse persistence and email/password reset are not implemented."
   ]
 }

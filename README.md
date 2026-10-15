@@ -26,6 +26,8 @@ npm run build
 
 [기반 검증 CI](https://github.com/devdevra/snap/actions/runs/38750549206)에서 도메인 26개·다운로드 API 12개·DB 권한 회귀 판정 77개·빌드·Chromium 6개 항목이 통과했습니다. 실제 Vercel/Supabase 연결 검증은 계정 연결 후 진행합니다.
 
+2026-10-16 [고객 로그인 연결 CI](https://github.com/devdevra/snap/actions/runs/38760315115)도 통과했습니다. 단위 테스트 64개·DB 판정 103개·체험 브라우저 6개·모의 고객 브라우저 4개를 확인했습니다. 배포된 홈·공개 설정·Auth 서버 접근은 정상이며 DB는 아직 `missing_schema`입니다. [고객 로그인 화면](https://staycut-snap.vercel.app/#account)의 실제 계정/파일 전체 검증은 관리자 설정 후 진행합니다.
+
 ## 최신 고도화 · v2
 
 2026-10-15: 고객 선별, 상품·수정·결제·보관 경계, 실제 게시에서 유료 재편집으로 넘어가는 조건, CAC·영업·관리 노동을 포함한 손익과 실험 중단 기준을 구체화했습니다. 신규 조건과 숫자는 검증 전 제안입니다.
