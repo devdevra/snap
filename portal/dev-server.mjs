@@ -7,13 +7,14 @@ import configHandler from '../api/config.js';
 import healthHandler from '../api/health.js';
 import previewHandler from '../api/preview.js';
 import downloadHandler from '../api/download.js';
+import operatorHandler from '../api/operator.js';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i < 0 ? fallback : process.argv[i + 1]; };
 const host = arg('--host', '127.0.0.1');
 const port = Number(arg('--port', '4173'));
 const mime = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm', '.woff': 'font/woff', '.woff2': 'font/woff2', '.txt': 'text/plain; charset=utf-8' };
-const apiRoutes = { '/api/config': configHandler, '/api/health': healthHandler, '/api/preview': previewHandler, '/api/download': downloadHandler };
+const apiRoutes = { '/api/config': configHandler, '/api/health': healthHandler, '/api/preview': previewHandler, '/api/download': downloadHandler, '/api/operator': operatorHandler };
 const server = http.createServer(async (req, res) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'no-store');

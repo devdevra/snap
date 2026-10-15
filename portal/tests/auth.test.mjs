@@ -29,6 +29,52 @@ function harness(route, { storage = memory(), config = { supabaseUrl: ORIGIN, pu
 
 async function signedIn(route, options) { const result = harness(route, options); await result.client.signIn('customer@example.com', 'private password'); return result; }
 
+test('operator requests retain the user JWT, surface safe permission errors, and reject other origins', async () => {
+  const { client, calls } = await signedIn((url, options) => {
+    assert.equal(url, '/api/operator');
+    assert.equal(options.headers.Authorization, `Bearer ${TOKEN}`);
+    assert.equal(options.cache, 'no-store');
+    return response(403, { error: '운영자 권한이 없는 계정입니다.' });
+  });
+  await assert.rejects(client.request('/api/operator', { method: 'POST', body: JSON.stringify({ action: 'context' }) }),
+    error => error instanceof PortalError && error.code === 'permission' && error.message === '운영자 권한이 없는 계정입니다.');
+  const count = calls.length;
+  assert.throws(() => client.request('https://other.example/api/operator'), /지원하지 않는 요청/);
+  assert.equal(calls.length, count);
+});
+
+test('session observers clear private UI on sign-out even when another observer fails', async () => {
+  const { client } = harness(url => url.includes('/auth/v1/logout') ? response(500, {}) : response(200, {}));
+  const identities = [];
+  client.subscribe(() => { throw new Error('observer failure'); });
+  const unsubscribe = client.subscribe(user => identities.push(user?.id ?? null));
+  await client.signIn('customer@example.com', 'private password');
+  assert.deepEqual(identities, [USER]);
+  await assert.rejects(client.signOut());
+  assert.deepEqual(identities, [USER, null]);
+  assert.equal(client.user, undefined);
+  unsubscribe();
+  await client.signIn('customer@example.com', 'private password');
+  assert.deepEqual(identities, [USER, null]);
+});
+
+test('a late operator response cannot refresh or replace a newer sign-in session', async () => {
+  let release, started;
+  const ready = new Promise(resolve => { started = resolve; });
+  const { client, calls } = await signedIn(url => {
+    if (url === '/api/operator') { started(); return new Promise(resolve => { release = resolve; }); }
+    if (url.includes('/auth/v1/logout')) return response(200, {});
+  });
+  const pending = client.request('/api/operator', { method: 'POST', body: '{"action":"context"}' });
+  await ready;
+  await client.signOut();
+  await client.signIn('customer@example.com', 'new password');
+  release(response(401, {}));
+  await assert.rejects(pending, { code: 'auth_changed' });
+  assert.equal(client.user.id, USER);
+  assert.equal(calls.filter(call => call.url.includes('grant_type=refresh_token')).length, 0);
+});
+
 test('public configuration falls back only on API 404 and never accepts a service secret', async () => {
   const calls = [];
   const client = createPortalClient({ storage: memory(), fetchImpl: async url => {

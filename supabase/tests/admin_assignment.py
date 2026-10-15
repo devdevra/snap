@@ -11,6 +11,7 @@ def sql_literal(value):
 
 TEMPLATE = Path(__file__).resolve().parents[1] / 'admin' / 'assign-member.sql'
 SOURCE = TEMPLATE.read_text(encoding='utf-8')
+OPERATOR_SOURCE = (TEMPLATE.parent / 'assign-operator.sql').read_text(encoding='utf-8')
 MARKERS = ('__AUTH_EMAIL__', '__LODGING_NAME__', '__ACCESS_START_DATE__', '__ACCESS_END_DATE__')
 
 
@@ -32,6 +33,20 @@ def render(email, name, start='2026-01-01', end='2026-01-07'):
 
 def expected_error(statement, state, label):
     return f'select test.throws({sql_literal(statement)}, {sql_literal(state)}, {sql_literal(label)});'
+
+
+def render_operator(email):
+    original = '$staycut_assign_operator$'
+    assert OPERATOR_SOURCE.count(original) == 2
+    candidate = '$staycut_operator_rendered_0$'
+    suffix = 0
+    while candidate in email:
+        suffix += 1
+        candidate = f'$staycut_operator_rendered_{suffix}$'
+    result = OPERATOR_SOURCE.replace(original, candidate)
+    marker = sql_literal('__AUTH_EMAIL__')
+    assert result.count(marker) == 1
+    return result.replace(marker, sql_literal(email))
 
 
 def main():
@@ -85,6 +100,17 @@ insert into auth.users(id,email,email_confirmed_at) values
         expected_error(setup, '55000', 'shared tenant is outside bounded first-owner rerun'),
         f"select test.ok((select count(*)=1 from public.tenant_members where user_id='{other}' and role='member' and active and access_allowed and access_end_date='2026-01-07'), 'shared-tenant rejection leaves unrelated member unchanged');",
         "select test.ok((select count(*)=0 from public.assets) and (select count(*)=0 from public.asset_versions) and (select count(*)=0 from public.version_approvals), 'first-owner setup creates no media or approval fixtures');",
+        expected_error(OPERATOR_SOURCE, '22023', 'operator installer refuses unchanged email placeholder'),
+        expected_error(render_operator('unconfirmed@example.invalid'), '42501', 'operator installer requires a verified existing Auth account'),
+        "create temporary table membership_before_operator on commit drop as select * from public.tenant_members;",
+        render_operator('OWNER-ONE@example.invalid'),
+        render_operator('OWNER-ONE@example.invalid'),
+        f"select test.ok((select count(*)=1 from public.portal_operators where user_id='{owner}' and active), 'explicit administrator installer independently grants operator role');",
+        f"select test.ok((select count(*)=1 from public.operator_action_log where action='operator_bootstrap' and entity_id='{owner}' and actor_id is null), 'operator installer audits creation once without inventing an end-user actor');",
+        "select test.ok(not exists((select * from public.tenant_members except select * from membership_before_operator) union all (select * from membership_before_operator except select * from public.tenant_members)), 'operator installer leaves all customer memberships and roles unchanged');",
+        f"update public.portal_operators set active=false where user_id='{owner}';",
+        expected_error(render_operator('owner-one@example.invalid'), '55000', 'operator installer never silently reactivates an inactive operator'),
+        f"select test.ok((select not active from public.portal_operators where user_id='{owner}'), 'rejected operator reactivation leaves revoked access unchanged');",
         "rollback;",
         "\\echo 'First-owner administrator SQL regression passed.'",
     ]

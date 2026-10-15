@@ -11,6 +11,7 @@ const PUBLIC_ENV = { SUPABASE_URL: ENV.SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY: E
 const NO_SIGNING = {
   serverKeyConfigured: false, serverDatabaseReady: false, serverDatabaseStatus: 'not_configured',
   privateStorageReady: false, privateStorageStatus: 'not_configured',
+  operatorSchemaReady: false, operatorSchemaStatus: 'not_configured',
 };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status }); }
 async function invoke(create, options = {}, method = 'GET') {
@@ -119,10 +120,11 @@ test('privileged probes verify complete zero-row schema and exact private bucket
     configured: true, authReady: true, databaseReady: false, databaseStatus: 'access_restricted',
     serverKeyConfigured: true, serverDatabaseReady: true, serverDatabaseStatus: 'ready',
     privateStorageReady: true, privateStorageStatus: 'ready',
+    operatorSchemaReady: true, operatorSchemaStatus: 'ready',
   });
-  assert.equal(calls.length, 14);
+  assert.equal(calls.length, 18);
   const privileged = calls.filter(call => call.options.headers.apikey === ENV.SUPABASE_SECRET_KEY);
-  assert.equal(privileged.length, 7);
+  assert.equal(privileged.length, 11);
   for (const { url, options } of privileged) {
     assert.equal(options.method, 'GET');
     assert.equal(options.headers.Authorization, undefined);
@@ -212,7 +214,7 @@ test('privileged timeouts abort all probes without claiming readiness or exposin
       aborted += 1; reject(new Error(ENV.SUPABASE_SECRET_KEY));
     }, { once: true }));
   } });
-  assert.equal(aborted, 7);
+  assert.equal(aborted, 11);
   assert.equal(response.body.serverDatabaseReady, false);
   assert.equal(response.body.privateStorageReady, false);
   assert.equal(response.body.serverDatabaseStatus, 'unavailable');
@@ -234,4 +236,20 @@ test('legacy service-role signing uses JWT headers only on privileged probes', a
   assert.equal(response.body.serverDatabaseReady, true);
   assert.equal(response.body.privateStorageReady, true);
   assert.ok(!response.raw.includes(legacy));
+});
+
+
+test('missing operator migration leaves the existing customer schema and private storage ready', async () => {
+  const response = await invoke(createHealthHandler, { fetchImpl: async url => {
+    if (url.includes('/auth/')) return json({ external: {} });
+    if (url.includes('/storage/')) return json({ id: 'staycut-deliverables', public: false });
+    if (/\/(portal_operators|operator_action_log|operator_upload_sessions)\?/.test(url)
+      || url.includes('select=id,delivery_bytes')) return json({ code: 'PGRST205', message: 'omit operator details' }, 404);
+    return json([]);
+  } });
+  assert.equal(response.body.serverDatabaseReady, true);
+  assert.equal(response.body.privateStorageReady, true);
+  assert.equal(response.body.operatorSchemaReady, false);
+  assert.equal(response.body.operatorSchemaStatus, 'missing_schema');
+  assert.ok(!response.raw.includes('omit operator details'));
 });

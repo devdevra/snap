@@ -11,6 +11,7 @@
     "test:server": "node --test --test-isolation=none server-tests/*.test.mjs",
     "test:browser": "python3 portal/tests/browser.py",
     "test:auth-browser": "python3 portal/tests/auth-browser.py",
+    "test:operator-browser": "python3 portal/tests/operator-browser.py",
     "build": "node portal/scripts/build.mjs"
   }
 }

@@ -5,6 +5,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm ci --ignore-scripts --no-audit --no-fund",
   "regions": ["icn1"],
+  "functions": { "api/operator.js": { "maxDuration": 180 } },
   "headers": [
     {
       "source": "/(.*)",

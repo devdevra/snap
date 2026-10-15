@@ -3,7 +3,8 @@ import {
   approvalBlockReason, downloadBlockReason, rightsBlockReason, accessBlockReason,
   validDate, validOptionalUrl,
 } from './domain.js';
-import { initCustomerPortal } from './auth.js';
+import { createPortalClient, initCustomerPortal } from './auth.js';
+import { mountOperatorPortal } from './operator.js';
 
 const state = createInitialState();
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -19,6 +20,7 @@ const statusPill = (asset) => `<span class="status-pill ${asset.approvalStatus =
 let toastTimer;
 let modalReturnFocus;
 let customerPortal;
+let operatorPortal;
 
 function toast(message) {
   const element = $('#toast');
@@ -180,6 +182,12 @@ function renderLibrary() {
 function render() { renderHome(); renderReview(); renderLibrary(); }
 
 function showPage(page, { focus = true, updateHash = true } = {}) {
+  if (page === 'manage' && operatorPortal) {
+    customerPortal?.leave();
+    operatorPortal.open({ focus, updateHash });
+    return;
+  }
+  operatorPortal?.leave();
   if (page === 'account' && customerPortal) { customerPortal.open({ focus, updateHash }); return; }
   customerPortal?.leave();
   if (!['home', 'review', 'content'].includes(page)) page = 'home';
@@ -450,5 +458,7 @@ document.addEventListener('keydown', (event) => {
 
 window.addEventListener('hashchange', () => showPage(location.hash.slice(1), { updateHash: false }));
 render();
-customerPortal = initCustomerPortal({ showDemo: () => showPage('home'), beforeOpen: closeModal });
+const portalClient = createPortalClient();
+customerPortal = initCustomerPortal({ client: portalClient, showDemo: () => showPage('home'), beforeOpen: closeModal, onNavigate: page => showPage(page) });
+operatorPortal = mountOperatorPortal({ root: $('#operator-portal'), client: portalClient, showCustomer: () => showPage('account'), showDemo: () => showPage('home'), beforeOpen: closeModal });
 showPage(location.hash.slice(1) || 'home', { focus: false });

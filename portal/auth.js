@@ -27,16 +27,24 @@ export function createPortalClient({ fetchImpl = globalThis.fetch, storage, cloc
   let session;
   let refreshPromise;
   let configPromise;
+  let authGeneration = 0;
   let storageImpl = storage;
+  const sessionListeners = new Set();
+  const notifySession = user => {
+    for (const listener of sessionListeners) { try { listener(user); } catch { /* UI observers cannot prevent session cleanup. */ } }
+  };
   if (storage === undefined) { try { storageImpl = globalThis.sessionStorage; } catch { storageImpl = null; } }
-  const clear = () => { session = null; try { storageImpl?.removeItem(SESSION_KEY); } catch { /* Memory-only sessions remain usable. */ } };
+  const clear = () => { authGeneration += 1; session = null; try { storageImpl?.removeItem(SESSION_KEY); } catch { /* Memory-only sessions remain usable. */ } notifySession(null); };
+  const ensureGeneration = generation => {
+    if (generation !== authGeneration) throw new PortalError('로그인 계정이 변경되었습니다. 현재 계정에서 다시 시도해 주세요.', 'auth_changed');
+  };
   const persist = () => { try { storageImpl?.setItem(SESSION_KEY, JSON.stringify({ origin: config.origin, ...session })); } catch { /* A disabled storage does not block sign-in. */ } };
   const validToken = value => typeof value === 'string' && value.length <= 8192 && JWT.test(value);
   const validRefresh = value => typeof value === 'string' && value.length > 0 && value.length <= 8192 && !/[\s\x00-\x1f]/.test(value);
 
-  async function json(url, options = {}) {
+  async function json(url, options = {}, timeoutMs = 15000) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 15000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetchImpl(url, { ...options, signal: controller.signal, redirect: 'error', cache: 'no-store' });
       let data;
@@ -68,62 +76,93 @@ export function createPortalClient({ fetchImpl = globalThis.fetch, storage, cloc
     if (!validToken(data?.access_token) || !validRefresh(data?.refresh_token) || !UUID.test(data?.user?.id || '')) throw new PortalError('로그인 응답을 확인할 수 없습니다. 다시 로그인해 주세요.', 'auth');
     const expires = Number(data.expires_at) || Math.floor(clock() / 1000) + Number(data.expires_in || 3600);
     if (!Number.isFinite(expires)) throw new PortalError('로그인 응답을 확인할 수 없습니다.', 'auth');
+    const previousId = session?.user?.id;
     session = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: expires, user: { id: data.user.id, email: data.user.email || '' } };
     persist();
+    if (previousId !== session.user.id) notifySession(session.user);
     return session.user;
   }
 
   async function refresh() {
     if (!session) throw new PortalError('다시 로그인해 주세요.', 'auth');
     if (!refreshPromise) refreshPromise = (async () => {
+      const generation = authGeneration;
       const result = await json(`${config.origin}/auth/v1/token?grant_type=refresh_token`, {
         method: 'POST', headers: { apikey: config.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: session.refresh_token }),
       });
+      ensureGeneration(generation);
       if (!result.ok) { if ([400, 401, 403].includes(result.status)) clear(); throw transportError(result.status, result.data, true); }
       return acceptSession(result.data);
     })().finally(() => { refreshPromise = null; });
     return refreshPromise;
   }
 
-  async function authenticated(path, options = {}) {
+  async function authenticated(path, options = {}, safeApiMessage = false, timeoutMs = 15000) {
     await configure();
     if (!session) throw new PortalError('다시 로그인해 주세요.', 'auth');
+    const generation = authGeneration;
     if (session.expires_at * 1000 < clock() + 60000) await refresh();
+    ensureGeneration(generation);
     const request = () => json(path.startsWith('/api/') ? path : `${config.origin}${path}`, {
       ...options, headers: { apikey: config.key, Authorization: `Bearer ${session.access_token}`, ...options.headers },
-    });
+    }, timeoutMs);
     let result = await request();
-    if (result.status === 401) { await refresh(); result = await request(); }
-    if (!result.ok) { if (result.status === 401) clear(); throw transportError(result.status, result.data); }
+    ensureGeneration(generation);
+    if (result.status === 401) { await refresh(); ensureGeneration(generation); result = await request(); ensureGeneration(generation); }
+    if (!result.ok) {
+      if (result.status === 401) clear();
+      const problem = transportError(result.status, result.data);
+      if (safeApiMessage && result.status !== 401 && typeof result.data?.error === 'string'
+        && result.data.error.length > 0 && result.data.error.length <= 400) problem.message = result.data.error;
+      throw problem;
+    }
     return result.data;
   }
 
   return {
     configure,
     get user() { return session?.user; },
+    subscribe(listener) {
+      if (typeof listener !== 'function') throw new TypeError('Session listener must be a function.');
+      sessionListeners.add(listener);
+      return () => sessionListeners.delete(listener);
+    },
+    request(path, options = {}) {
+      if (path !== '/api/operator') throw new PortalError('지원하지 않는 요청입니다.');
+      return authenticated(path, options, true, 170000);
+    },
     async restore() {
+      const generation = ++authGeneration;
       await configure();
+      ensureGeneration(generation);
       let saved;
       try { saved = JSON.parse(storageImpl?.getItem(SESSION_KEY) || 'null'); } catch { clear(); return null; }
       if (!saved) return null;
       if (saved.origin !== config.origin || !validToken(saved.access_token) || !validRefresh(saved.refresh_token) || !Number.isFinite(saved.expires_at)) { clear(); return null; }
+      const previousId = session?.user?.id;
       session = { ...saved, user: undefined };
       try {
         const user = await authenticated('/auth/v1/user');
         if (!UUID.test(user?.id || '')) throw new PortalError('다시 로그인해 주세요.', 'auth');
-        session.user = { id: user.id, email: user.email || '' }; persist(); return session.user;
-      } catch (error) { clear(); throw error; }
+        session.user = { id: user.id, email: user.email || '' }; persist();
+        if (previousId !== session.user.id) notifySession(session.user);
+        return session.user;
+      } catch (error) { if (generation === authGeneration) clear(); throw error; }
     },
     async signIn(email, password) {
+      const generation = ++authGeneration;
       await configure();
+      ensureGeneration(generation);
       const result = await json(`${config.origin}/auth/v1/token?grant_type=password`, {
         method: 'POST', headers: { apikey: config.key, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }),
       });
+      ensureGeneration(generation);
       if (!result.ok) throw transportError(result.status, result.data, true);
       return acceptSession(result.data);
     },
     async signOut() {
-      try { if (session) await authenticated('/auth/v1/logout?scope=local', { method: 'POST' }); } finally { clear(); }
+      const generation = authGeneration;
+      try { if (session) await authenticated('/auth/v1/logout?scope=local', { method: 'POST' }); } finally { if (generation === authGeneration) clear(); }
     },
     async listAssets() {
       const tables = [
@@ -155,13 +194,12 @@ export function createPortalClient({ fetchImpl = globalThis.fetch, storage, cloc
   };
 }
 
-export function initCustomerPortal({ showDemo, beforeOpen } = {}) {
+export function initCustomerPortal({ showDemo, beforeOpen, onNavigate, client = createPortalClient() } = {}) {
   const root = document.querySelector('#customer-portal');
   const entry = document.querySelector('#account-entry');
   const nav = document.querySelector('#app-nav');
   const caption = document.querySelector('.header-caption');
   const footerNote = document.querySelector('.site-footer p:last-child');
-  const client = createPortalClient();
   let active = false;
   let initialized = false;
   let busy = false;
@@ -170,8 +208,15 @@ export function initCustomerPortal({ showDemo, beforeOpen } = {}) {
   let message = '';
   let problem = '';
   let phase = 'login';
+  let loadGeneration = 0;
   const drafts = new Map();
   const viewed = new Set();
+  client.subscribe(() => {
+    loadGeneration += 1; busy = false;
+    assets = []; selectedId = null; drafts.clear(); viewed.clear();
+    if (!client.user) { initialized = false; phase = 'login'; }
+    if (active) render(); else root.replaceChildren();
+  });
   const $ = selector => root.querySelector(selector);
   const selected = () => assets.find(asset => asset.id === selectedId);
   const draft = asset => {
@@ -226,6 +271,7 @@ export function initCustomerPortal({ showDemo, beforeOpen } = {}) {
   }
 
   function render() {
+    if (!active) return;
     setChrome();
     if (client.user) renderWorkspace(); else renderLogin();
   }
@@ -250,13 +296,17 @@ export function initCustomerPortal({ showDemo, beforeOpen } = {}) {
     else showStatus();
   }
   async function load() {
+    const generation = ++loadGeneration;
+    const userId = client.user?.id;
     busy = true; phase = 'loading'; problem = ''; render();
     try {
-      const next = await client.listAssets(); assets = next;
+      const next = await client.listAssets();
+      if (generation !== loadGeneration || client.user?.id !== userId) return;
+      assets = next;
       if (!assets.some(asset => asset.id === selectedId)) selectedId = assets[0]?.id;
       phase = 'ready';
-    } catch (error) { phase = 'error'; displayError(error); }
-    finally { busy = false; render(); }
+    } catch (error) { if (generation === loadGeneration && client.user?.id === userId) { phase = 'error'; displayError(error); } }
+    finally { if (generation === loadGeneration) { busy = false; render(); } }
   }
   async function initialize() {
     if (initialized) return;
@@ -273,10 +323,13 @@ export function initCustomerPortal({ showDemo, beforeOpen } = {}) {
     if (updateHash && location.hash !== '#account') history.replaceState(null, '', '#account');
     document.title = '고객 작업 공간 · STAYCUT';
     render(); if (focus) focusHeading();
-    initialize();
+    if (initialized && client.user) load(); else initialize();
   }
   function leave() { pause(); active = false; setChrome(); }
-  entry.addEventListener('click', () => active ? showDemo?.() : open());
+  entry.addEventListener('click', () => {
+    if (onNavigate) onNavigate(active ? 'home' : 'account');
+    else if (active) showDemo?.(); else open();
+  });
 
   root.addEventListener('input', event => {
     const asset = selected();
