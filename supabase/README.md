@@ -7,7 +7,7 @@
 | 테이블 | 역할 |
 | --- | --- |
 | `tenants` | 숙소/고객사 |
-| `tenant_members` | Supabase Auth 사용자와 고객사 연결, 활성 여부·접근 기간 |
+| `tenant_members` | Supabase Auth 사용자와 고객사 연결, 활성 여부·접근 기간·변경 검사용 revision |
 | `assets` | 작업 제목, 지정 승인자, 최신 버전, 계약·권리·수납 상태 |
 | `asset_versions` | 원본과 별도 미리보기의 경로·SHA-256, 버전·검토 상태 |
 | `version_approvals` | 정확한 버전·승인자·시각·콘텐츠 해시·사용 범위의 변경 불가 이력 |
@@ -22,7 +22,13 @@
 
 ## 운영자 RPC 계약
 
-운영자 RPC는 별도의 권한을 확인합니다. `operator_context`, `operator_create_tenant`, `operator_prepare_upload`, `operator_upload_manifest`, `operator_update_asset`는 실제 사용자 JWT와 활성 운영자만 허용합니다. `operator_commit_upload`는 서버가 실제 파일을 검증한 뒤 서비스 역할로만 호출하며 행위자·업로드 작성자·현재 운영자·버전/수정 요청 스냅샷을 재검사합니다. 운영자 브라우저도 기본 테이블이나 운영자 권한에 직접 쓰지 못합니다.
+운영자 RPC는 별도의 권한을 확인합니다. `operator_context`, `operator_create_tenant`, `operator_prepare_upload`, `operator_upload_manifest`, `operator_update_asset`, `operator_add_member`, `operator_update_member`, `operator_assign_approver`는 실제 사용자 JWT와 활성 운영자만 허용합니다. `operator_commit_upload`는 서버가 실제 파일을 검증한 뒤 서비스 역할로만 호출하며 행위자·업로드 작성자·현재 운영자·버전/수정 요청 스냅샷을 재검사합니다. 운영자 브라우저도 기본 테이블이나 운영자 권한에 직접 쓰지 못합니다.
+
+### 고객 관리 추가 마이그레이션
+
+`202610160003_operator_members.sql`은 기존 배정·승인 이력을 보존하는 추가 설치입니다. `tenant_members.revision`은 DB 업데이트마다 증가합니다. 고객 변경은 화면에서 읽은 revision과 일치해야 하므로 오래된 화면이 다른 운영자의 변경을 덮어쓰지 못합니다. 고객 추가는 이메일 확인이 끝난 기존 Auth 계정을 `member`로 연결하고, 기존 멤버십을 자동 재활성화하거나 기간을 넓히지 않습니다. 수정은 역할을 보존하며 운영자 권한을 부여하지 않습니다.
+
+지정 승인자 변경은 같은 고객사의 현재 접근 가능한 확인된 계정만 허용하고, 화면에서 읽은 최신 버전과 기존 승인자를 다시 검사합니다. 기존 승인 기록을 변경하지 않습니다. 고객 관리와 승인자 변경은 감사 기록에 남습니다. 접근 회수는 계정 삭제가 아니며, 이전에 발급된 파일 링크는 최대 60초의 남은 유효 시간 동안 동작할 수 있습니다.
 
 ## 고객 RPC 계약
 
@@ -80,7 +86,7 @@ Vercel `/api/download`와 `/api/preview`가 사용자 JWT로 각 허가 RPC를 �
 
 Supabase 프로젝트 연결·환경 변수 설정을 확인해야 합니다. 서버 비밀 키는 Vercel 서버 환경 변수에만 저장합니다. 운영 데이터가 있는 프로젝트에 테스트용 `bootstrap.sql`을 실행하지 마세요.
 
-Supabase CLI에서 올바른 프로젝트에 연결한 뒤 마이그레이션 이력을 검토하고 `supabase db push`로 `migrations/`의 SQL을 파일명 순서대로 적용합니다. SQL Editor를 사용한다면 기반 마이그레이션 `202610150001_portal_foundation.sql` 다음에 `202610160001_preview_access.sql`을 실행합니다. 이미 적용한 마이그레이션은 다시 실행하지 않습니다. 실제 Auth·Storage 설정, 프로젝트에 이미 있는 권한/정책과의 통합, 사용자 JWT와 파일로 하는 종단 검증은 별도로 수행해야 합니다.
+Supabase CLI에서 올바른 프로젝트에 연결한 뒤 마이그레이션 이력을 검토하고 `supabase db push`로 `migrations/`의 SQL을 파일명 순서대로 적용합니다. SQL Editor를 사용한다면 기반 마이그레이션 `202610150001_portal_foundation.sql` 다음에 `202610160001_preview_access.sql`을 실행합니다. 운영자 업로드는 `202610160002_operator_uploads.sql`, 고객 관리는 `202610160003_operator_members.sql`을 순서대로 추가합니다. 이미 적용한 마이그레이션은 다시 실행하지 않습니다. 실제 Auth·Storage 설정, 프로젝트에 이미 있는 권한/정책과의 통합, 사용자 JWT와 파일로 하는 종단 검증은 별도로 수행해야 합니다.
 
 ## 회귀 검증
 

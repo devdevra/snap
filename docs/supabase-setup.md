@@ -4,7 +4,7 @@
 
 ## 1. 새 DB 구조 적용
 
-새 프로젝트의 [SQL Editor](https://supabase.com/dashboard/project/adyhefvhfabwkfdwwjiz/sql/new)에서 저장소의 [`supabase/setup.sql`](../supabase/setup.sql) 내용을 실행합니다. 두 마이그레이션을 하나의 트랜잭션으로 묶은 신규 설치용 파일입니다. 기존 `public.tenants`가 있으면 중단하며, 가상 숙소·사용자·수납 데이터를 생성하지 않습니다.
+새 프로젝트의 [SQL Editor](https://supabase.com/dashboard/project/adyhefvhfabwkfdwwjiz/sql/new)에서 저장소의 [`supabase/setup.sql`](../supabase/setup.sql) 내용을 실행합니다. 파일명 순서의 마이그레이션들을 하나의 트랜잭션으로 묶은 신규 설치용 파일입니다. 기존 `public.tenants`가 있으면 중단하며, 가상 숙소·사용자·수납 데이터를 생성하지 않습니다.
 
 이미 기반 테이블을 적용한 프로젝트라면 이 파일을 반복 실행하지 말고 `supabase/migrations/`에서 누락된 마이그레이션만 적용합니다. `supabase/tests/` 파일은 실제 프로젝트에 실행하지 않습니다.
 
@@ -23,6 +23,14 @@ Auth 계정 생성만으로 작업에 접근할 수는 없습니다. 관리자�
 첫 계정의 새 숙소 연결은 [`supabase/admin/assign-member.sql`](../supabase/admin/assign-member.sql)을 SQL Editor에서 관리자 권한으로 실행합니다. 네 입력값은 기존 Auth 이메일·새 숙소명·접근 시작일·종료일이며 날짜는 한국 시간 기준 양끝을 포함합니다. 해당 계정은 이메일 확인이 완료되어 있어야 합니다. 입력에 작은따옴표가 있으면 SQL 문자열에 맞게 이스케이프하고, 바깥 DO 구분자가 입력값에 등장하지 않도록 합니다. 개인화한 파일은 Git에 올리지 않습니다.
 
 이 파일은 새 숙소와 첫 owner 멤버십만 한 번에 생성합니다. 동일한 첫 설정의 재실행은 변경 없이 끝나며, 기존 다른 멤버십·중복 숙소명·접근 기간 변경 등은 중단합니다. 기존 숙소에 다른 사람을 추가하거나 접근 기간을 갱신하는 용도로 사용하지 않습니다. Auth·작업·파일·수납·사용권 데이터는 변경하지 않습니다. 숙소만 연결하고 작업을 아직 등록하지 않았다면 로그인 후 “아직 배정된 작업이 없어요”가 정상입니다.
+
+## 기존 고객 관리 기능 추가
+
+기반·미리보기·운영자 업로드 설치를 마친 현재 프로젝트에는 [`202610160003_operator_members.sql`](../supabase/migrations/202610160003_operator_members.sql)만 추가 적용합니다. 기존 운영자 설치 파일과 `setup.sql`을 반복 실행하지 않습니다. 이 마이그레이션은 기존 고객 배정·승인·파일을 보존하고 고객 변경 RPC·동시 변경 검사를 추가하며, 사용자나 샘플 데이터를 생성하지 않습니다.
+
+적용 후 `/#manage`의 **고객 관리**에서 확인된 기존 Auth 계정을 선택한 숙소에 추가하고, 접근 기간·허용 여부·활성 상태를 변경합니다. 이미 배정된 계정은 추가 기능으로 덮어쓰지 않고 수정 기능을 사용합니다. 새 계정 생성·초대 메일·비밀번호 재설정은 여전히 Supabase 관리자 작업입니다. 고객사 `owner`를 시스템 운영자로 승격하지 않습니다.
+
+`/api/health`의 `memberManagementSchemaReady`는 추가 컬럼의 0행 조회 결과입니다. 기존 `operatorSchemaReady`와 별개이므로 새 SQL 적용 전에도 기존 업로드·고객 검토 기능은 유지됩니다. 이 점검은 실제 사용자 권한이나 영상 전체 흐름을 증명하지 않습니다.
 
 ## 4. 실제 파일 등록
 

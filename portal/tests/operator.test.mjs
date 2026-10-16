@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { webcrypto } from 'node:crypto';
-import { MAX_VIDEO_BYTES, validateVideoFile, hashVideoFile, validateSignedUploadUrl, putSignedVideo, readTerms, createVideoUploadJob } from '../operator.js';
+import { MAX_VIDEO_BYTES, validateVideoFile, hashVideoFile, validateSignedUploadUrl, putSignedVideo, readTerms, createVideoUploadJob, memberAccessState, assetReviewState, assetAttention } from '../operator.js';
 
 const ORIGIN = 'https://operator-project.supabase.co';
 const ACTOR = '11111111-1111-4111-8111-111111111111';
@@ -149,4 +149,28 @@ test('a failed HTTP upload is rejected even after every byte was sent', async ()
   const fake = { upload: {}, open() {}, setRequestHeader() {}, send() { this.upload.onprogress({ lengthComputable: true, loaded: 20, total: 20 }); this.status = 500; this.onload(); } };
   await assert.rejects(putSignedVideo(signed(), file(), value => progress.push(value), { xhrFactory: () => fake }), /업로드를 완료/);
   assert.deepEqual(progress, [99]);
+});
+
+test('membership eligibility honors inclusive dates and distinguishes scheduled, expired and revoked access', () => {
+  const member = { active: true, access_allowed: true, access_start_date: '2026-10-16', access_end_date: '2026-10-22' };
+  assert.equal(memberAccessState(member, '2026-10-16'), 'active');
+  assert.equal(memberAccessState(member, '2026-10-22'), 'active');
+  assert.equal(memberAccessState(member, '2026-10-15'), 'scheduled');
+  assert.equal(memberAccessState(member, '2026-10-23'), 'expired');
+  assert.equal(memberAccessState({ ...member, active: false }, '2026-10-16'), 'inactive');
+  assert.equal(memberAccessState({ ...member, access_allowed: false }, '2026-10-16'), 'blocked');
+  assert.equal(memberAccessState({ ...member, access_end_date: '2026-02-31' }, '2026-10-16'), 'invalid');
+});
+
+test('dashboard preserves revision priority and flags approval conditions that still block delivery', () => {
+  const member = { tenant_id: ACTOR, user_id: VERSION, active: true, access_allowed: true, access_start_date: '2026-01-01', access_end_date: '2026-12-31' };
+  const asset = { tenant_id: ACTOR, assigned_approver_id: VERSION, access_allowed: true, access_start_date: '2026-01-01', access_end_date: '2026-12-31', rights_status: 'valid', rights_start_date: '2026-01-01', rights_end_date: '2026-12-31', allowed_channels: ['instagram'], allowed_purposes: ['organic'], final_delivery_paid: true, latest_version: { review_status: 'approved' } };
+  assert.equal(assetReviewState(asset), 'approved');
+  assert.equal(assetReviewState({ ...asset, open_revision: { id: SESSION } }), 'revision');
+  assert.equal(assetReviewState({ ...asset, latest_version: { review_status: 'revision_requested' } }), 'pending');
+  assert.equal(assetReviewState({ ...asset, latest_version: null }), 'preparing');
+  assert.deepEqual(assetAttention(asset, [member], '2026-10-16'), []);
+  assert.deepEqual(assetAttention({ ...asset, rights_status: 'pending', final_delivery_paid: false }, [member], '2026-10-16'), ['이용허락 확인 전', '수납 확인 전']);
+  assert.deepEqual(assetAttention({ ...asset, rights_start_date: '2026-11-01' }, [member], '2026-10-16'), ['사용 기간 확인']);
+  assert.deepEqual(assetAttention(asset, [{ ...member, access_end_date: '2026-10-15' }], '2026-10-16'), ['승인자 접근 확인']);
 });
