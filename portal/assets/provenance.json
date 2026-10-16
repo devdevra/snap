@@ -1,0 +1,34 @@
+{
+  "reference": "../../design/home-editorial.png",
+  "selected_option": 2,
+  "kind": "AI-generated fictional lodging photography, source reference actually attached for each generation",
+  "media_note": "MP4 samples are generated-photo still videos for playback/download testing; they are not real footage.",
+  "images": [
+    {
+      "file": "room-hero.png",
+      "bytes": 2710033,
+      "sha256": "92caf60dd38873490e0217d89171f4a816750fb7629ea247991f1bfc5212517c"
+    },
+    {
+      "file": "terrace.png",
+      "bytes": 2976315,
+      "sha256": "fe5e4e9852a7351c5b928e19baaf23f5cea83be4e7ae4987e457ec8e1aba7e36"
+    },
+    {
+      "file": "evening.png",
+      "bytes": 2419777,
+      "sha256": "72b1715168810af4f112a4ac862253ca375fc9da083e3b755cd863ae916220dd"
+    },
+    {
+      "file": "morning.png",
+      "bytes": 2507771,
+      "sha256": "2375b6a07ae7f5bbccbcb488d994b2c39400df2821d1ade8ca90656525e96727"
+    }
+  ],
+  "preview_codecs": {
+    "mp4": "H.264; downloadable file and fallback preview",
+    "webm": "VP9; first preview source for open-source Chromium compatibility",
+    "dimensions": "1080x1920",
+    "sample_frame_rate": 2
+  }
+}

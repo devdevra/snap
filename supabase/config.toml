@@ -1,0 +1,2 @@
+# Local CLI project identifier, not a hosted Supabase project reference.
+project_id = "staycut"

@@ -1,0 +1,50 @@
+{
+  "created_at": "2026-10-15T10:44:46.354692+00:00",
+  "brief_date": "2026-10-15",
+  "target_frame": {
+    "width": 1440,
+    "height": 1024
+  },
+  "reference_source_commit": "c3b2e94f5423f7edda2d90812319f25cb6f75b7d",
+  "reference_attached_to_each_generation": true,
+  "images": [
+    {
+      "file": "next-action.png",
+      "width": 1487,
+      "height": 1058,
+      "bytes": 1676306,
+      "sha256": "7e1d71e1f21c8e0d9221b83f2dfad670e7b45e3ac5e74d8d0ff42e7515a82fbe",
+      "reference": "../assets/overview.png",
+      "kind": "AI-generated static fictional UI concept"
+    },
+    {
+      "file": "content-library.png",
+      "width": 1487,
+      "height": 1058,
+      "bytes": 1880216,
+      "sha256": "e4324c657cb12db3599e3e5566afcb22be7c2750b32b2a9a6730c4c68ecb10f7",
+      "reference": "../assets/overview.png",
+      "kind": "AI-generated static fictional UI concept"
+    },
+    {
+      "file": "version-review.png",
+      "width": 1487,
+      "height": 1058,
+      "bytes": 1590970,
+      "sha256": "f9a04ef024675d404145da125e211a6a9dfb6d0d4f5ac9525b5e2578717dc4f5",
+      "reference": "../assets/overview.png",
+      "kind": "AI-generated static fictional UI concept"
+    }
+  ],
+  "known_differences": [
+    "next-action.png: a supporting thumbnail reads 00:32; the contractual video duration proposal remains 15–30 seconds. Correct this label when implementing.",
+    "Static imagery does not verify mobile layout, interactions, accessibility or server authorization.",
+    "Artwork conveys layout direction; exact contract text, dates and state gates follow docs/product-spec.md."
+  ],
+  "classification": "Original set: three different functional screens in one service flow; these are not competing design variants.",
+  "screen_sequence": [
+    "next-action.png",
+    "content-library.png",
+    "version-review.png"
+  ]
+}

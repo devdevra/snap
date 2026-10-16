@@ -1,0 +1,75 @@
+{
+  "reviewed_at": "2026-10-15T10:45:02.159187+00:00",
+  "scope": "Document arithmetic, cross-document state rules, relative links in v2 documents, PNG integrity and visual inspection of three static concept images. No application implementation or browser tests performed.",
+  "checks_passed": [
+    "first-shoot time budget is 12h",
+    "monthly edit time budget is 3h",
+    "VAT totals preserve 69/19 assumptions",
+    "original monthly revenue is 290만원",
+    "direct cash+noncash matches original 36만원",
+    "cash residual before owner draw and taxes is 236만원",
+    "labor-adjusted monthly example is -18만원",
+    "acquisition cost counted once per example",
+    "relative link resolves: docs/service-plan-v2.md -> ./service-plan.md",
+    "relative link resolves: docs/service-plan-v2.md -> product-spec.md",
+    "relative link resolves: docs/service-plan-v2.md -> ../design/README.md",
+    "relative link resolves: design/README.md -> next-action.png",
+    "relative link resolves: design/README.md -> content-library.png",
+    "relative link resolves: design/README.md -> version-review.png",
+    "relative link resolves: design/README.md -> ../docs/product-spec.md",
+    "relative link resolves: design/README.md -> ../docs/service-plan-v2.md",
+    "three distinct PNG assets",
+    "payment requirement documented",
+    "rights block approval and download documented",
+    "publish evidence levels documented"
+  ],
+  "limitations": [
+    "next-action.png: a supporting thumbnail reads 00:32; the contractual video duration proposal remains 15–30 seconds. Correct this label when implementing.",
+    "Static imagery does not verify mobile layout, interactions, accessibility or server authorization.",
+    "Artwork conveys layout direction; exact contract text, dates and state gates follow docs/product-spec.md."
+  ],
+  "preserved_v1_artifacts": [
+    "index.html",
+    "exports/staycut-service-plan.pdf",
+    "docs/validation-results.json"
+  ],
+  "source_commit": "c3b2e94f5423f7edda2d90812319f25cb6f75b7d",
+  "home_variants_correction": {
+    "date": "2026-10-15",
+    "classification": "Original 3 images are a functional screen flow. New 3 images compare the same home function.",
+    "png_images": [
+      {
+        "file": "home-task-focused.png",
+        "bytes": 1772996,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "f5238d9a9896d039855722eb625f608abad6293ce7df4a8d6b42456aa0715edf"
+      },
+      {
+        "file": "home-editorial.png",
+        "bytes": 1900156,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "23ed1d4b6afe01c2f400856ce039d9b3fd63a59efc12ef29fd716ea320de0619"
+      },
+      {
+        "file": "home-studio.png",
+        "bytes": 1765599,
+        "width": 1487,
+        "height": 1058,
+        "sha256": "d717e91c87c236b038d66451dadced90e1d78627fe2d0fdee48552279d57584a"
+      }
+    ],
+    "visual_checks": [
+      "Same fictional property and project",
+      "Same v2 review-pending state and two videos",
+      "Same primary review action",
+      "Same four workflow stages with customer review current",
+      "Same three approved assets and corrected durations",
+      "Approval, usage conditions and publication remain separate"
+    ],
+    "limitations": [
+      "Static images do not verify functional behavior, mobile layout, accessibility or authorization."
+    ]
+  }
+}

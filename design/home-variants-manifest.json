@@ -1,0 +1,55 @@
+{
+  "created_at": "2026-10-15T11:41:33.106467+00:00",
+  "brief_date": "2026-10-15",
+  "user_timezone": "Asia/Seoul",
+  "classification": "Three visual design variants of the SAME customer home screen, with fixed content, status and primary action.",
+  "brief": "home-variants-brief.md",
+  "references_attached_to_each_generation": [
+    "../assets/overview.png",
+    "next-action.png"
+  ],
+  "target_frame": {
+    "width": 1440,
+    "height": 1024
+  },
+  "display_order": [
+    "home-task-focused.png",
+    "home-editorial.png",
+    "home-studio.png"
+  ],
+  "fixed_content": [
+    "온유스테이",
+    "10월 숙소 소개 영상",
+    "검토 대기 · v2",
+    "세로 영상 2편 · Instagram",
+    "영상 검토하기",
+    "촬영 완료 / 편집 완료 / 고객 검토 / 게시 준비",
+    "사용 범위 확인 완료 · 자체 SNS",
+    "동일 승인본 3개: 00:28 / 00:24 / 00:25",
+    "승인 완료 · 자체 SNS 사용 가능 / 게시 여부 미확인"
+  ],
+  "images": [
+    {
+      "file": "home-task-focused.png",
+      "bytes": 1772996,
+      "width": 1487,
+      "height": 1058,
+      "sha256": "f5238d9a9896d039855722eb625f608abad6293ce7df4a8d6b42456aa0715edf"
+    },
+    {
+      "file": "home-editorial.png",
+      "bytes": 1900156,
+      "width": 1487,
+      "height": 1058,
+      "sha256": "23ed1d4b6afe01c2f400856ce039d9b3fd63a59efc12ef29fd716ea320de0619"
+    },
+    {
+      "file": "home-studio.png",
+      "bytes": 1765599,
+      "width": 1487,
+      "height": 1058,
+      "sha256": "d717e91c87c236b038d66451dadced90e1d78627fe2d0fdee48552279d57584a"
+    }
+  ],
+  "verification": "PNG integrity and visual review of shared function/content; static mockups only, no browser or interaction testing."
+}

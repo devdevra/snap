@@ -1,0 +1,203 @@
+{
+  "verifiedAtUtc": "2026-10-16T00:54:56Z",
+  "sourceRepository": "devdevra/snap",
+  "sourceBranch": "codex/staycut-v2-design",
+  "sourceCommit": "fd12d68e3f278777ec4d37d4df26471868627faf",
+  "projectId": "prj_Tz30uhslPDuMv9vV3aZOfXHlswo9",
+  "team": "jake's projects",
+  "teamSlug": "jakes-projects-e2ded452",
+  "deploymentId": "dpl_12p89Vx6oYBnghneQMAfn6uX2ZJD",
+  "url": "https://staycut-snap.vercel.app",
+  "customerUrl": "https://staycut-snap.vercel.app/#account",
+  "immutableUrl": "https://staycut-snap-hcavgwix2-jakes-projects-e2ded452.vercel.app",
+  "status": "READY",
+  "target": "production",
+  "deploymentMethod": "github-connected-explicit-production-deployment",
+  "gitAutoDeployConnected": true,
+  "supabaseProject": "adyhefvhfabwkfdwwjiz",
+  "supabasePublicConfigConnected": true,
+  "supabaseAuthSettingsReachable": true,
+  "supabaseDatabaseStatus": "access_restricted",
+  "supabaseLiveUserFlowVerified": false,
+  "privateSigningKeyVerified": false,
+  "environmentVariableToolStatus": "list/create denied403; administrator registered keys; Production and Preview server DB/Storage read-only probes now pass",
+  "checks": [
+    {
+      "method": "GET",
+      "path": "/api/health",
+      "status": 200,
+      "configured": true,
+      "authReady": true,
+      "databaseReady": false,
+      "databaseStatus": "access_restricted",
+      "serverKeyConfigured": true,
+      "serverDatabaseReady": true,
+      "serverDatabaseStatus": "ready",
+      "privateStorageReady": true,
+      "privateStorageStatus": "ready",
+      "operatorSchemaReady": true,
+      "operatorSchemaStatus": "ready",
+      "memberManagementSchemaReady": false,
+      "memberManagementSchemaStatus": "missing_schema"
+    },
+    {
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "operatorSectionPresent": true,
+      "customerSectionPresent": true,
+      "operatorLinkPresent": true
+    },
+    {
+      "method": "GET",
+      "path": "/operator.js",
+      "status": 200,
+      "matchesTestedSource": true
+    },
+    {
+      "method": "GET",
+      "path": "/operator.css",
+      "status": 200,
+      "matchesTestedSource": true
+    },
+    {
+      "method": "GET",
+      "path": "/api/operator",
+      "status": 405,
+      "allow": "POST",
+      "cacheControl": "no-store, private"
+    }
+  ],
+  "ci": {
+    "url": "https://github.com/devdevra/snap/actions/runs/38828425290",
+    "codeCommit": "fd12d68e3f278777ec4d37d4df26471868627faf",
+    "unitTests": 128,
+    "databaseAssertions": 240,
+    "upgradePreservationAssertions": 12,
+    "memberManagementAssertions": 54,
+    "demoBrowserSuites": 6,
+    "mockCustomerBrowserSuites": 4,
+    "mockOperatorBrowserSuites": 9,
+    "status": "passed",
+    "artifactId": 12015823263,
+    "operatorScreenshotsReviewed": [
+      "operator-desktop-overview.png",
+      "operator-mobile-overview.png",
+      "operator-desktop-members.png",
+      "operator-mobile-members.png",
+      "operator-mobile-revision-review.png"
+    ],
+    "screenshotNote": "Chromium full-page captures can paint the offscreen fixed skip link; overview captures are clean. No horizontal overflow or browser errors."
+  },
+  "limitations": [
+    "User reported successful real customer login; live user-authorized approval/revision and actual file delivery remain unverified.",
+    "Operator schema is verified ready after user-reported SQL installation; authenticated operator console access and real media upload/delivery remain unverified.",
+    "New membership/access/approver management requires the additive fourth migration. It has not been applied to the live database; existing upload/customer features remain available.",
+    "Operator browser tests use isolated Auth/API/Storage mocks; PostgreSQL tests are disposable. No real customer data or media was created.",
+    "MP4/WebM only, max50MiB per file, original and distinct manually produced preview required; no transcoder/resumable large-file uploads/automatic orphan cleanup.",
+    "Actual payment processing, publication/reuse persistence and email/password reset are not implemented.",
+    "Production and Preview currently share the provided Supabase project; separate development database provisioning and automated production migrations are not configured."
+  ],
+  "gitRepositoryLinked": true,
+  "gitPushAutoDeploymentVerified": true,
+  "gitVerification": {
+    "checkedAtUtc": "2026-10-15T15:44:33.824Z",
+    "repository": "devdevra/snap",
+    "branch": "codex/staycut-v2-design",
+    "commit": "2cf6aa392c24ab8e17777bb361a7092a1fa7f8e6",
+    "deploymentId": "dpl_mibiFCtXpFibYjJCSDt5K7YewHSF",
+    "url": "https://staycut-snap-rinmzeuzb-jakes-projects-e2ded452.vercel.app",
+    "status": "READY",
+    "target": "staging",
+    "regions": [
+      "icn1"
+    ],
+    "productionBranchVerified": false,
+    "automaticPush": {
+      "checkedAtUtc": "2026-10-15T15:46:11.704Z",
+      "commit": "ac7319d34f5c587d91e79d4ec90c52fab97809cf",
+      "deploymentId": "dpl_GDohmr28mDRTYm9yegKD73qFmjkf",
+      "url": "https://staycut-snap-otg9e9wc3-jakes-projects-e2ded452.vercel.app",
+      "status": "READY",
+      "environment": "preview",
+      "source": "GitHub push webhook; no create_deployment call for this commit",
+      "homeHttpStatus": 200,
+      "healthHttpStatus": 200,
+      "databaseStatus": "missing_schema"
+    }
+  },
+  "regions": [
+    "icn1"
+  ],
+  "supabaseServerDatabaseReady": true,
+  "supabaseServerDatabaseStatus": "ready",
+  "serverKeyConfigured": true,
+  "serverKeyReadAccessVerified": true,
+  "privateStorageReady": true,
+  "privateStorageStatus": "ready",
+  "previousProduction": {
+    "deploymentId": "dpl_952ESwfxQkRUQhqZ37EvyTh6m3kj",
+    "sourceCommit": "bd5472edac0796815858375091dcd499a49fb3e4",
+    "immutableUrl": "https://staycut-snap-a5p9xacz8-jakes-projects-e2ded452.vercel.app",
+    "target": "production",
+    "deploymentMethod": "github-connected-explicit-production-deployment"
+  },
+  "previewReadiness": {
+    "deploymentId": "dpl_2NhN523FA1mNQoWS4PJ4JsUUYW7T",
+    "commit": "fd12d68e3f278777ec4d37d4df26471868627faf",
+    "url": "https://staycut-snap-qfui7e4ra-jakes-projects-e2ded452.vercel.app",
+    "status": "READY",
+    "configured": true,
+    "authReady": true,
+    "serverDatabaseReady": true,
+    "privateStorageReady": true,
+    "operatorSchemaReady": true,
+    "memberManagementSchemaReady": false,
+    "memberManagementSchemaStatus": "missing_schema"
+  },
+  "authAccountStatus": "user_reported_successful_real_sign_in",
+  "tenantAssignmentStatus": "private_assignment_sql_prepared_administrator_execution_pending",
+  "administratorAssignment": {
+    "template": "supabase/admin/assign-member.sql",
+    "status": "private_sql_prepared_administrator_execution_pending",
+    "ci": {
+      "url": "https://github.com/devdevra/snap/actions/runs/38767936380",
+      "commit": "af6ce424596aa9ca9d8c6b0430ff6631d998aa18",
+      "status": "passed",
+      "newAssignmentAssertions": 22,
+      "totalDatabaseAssertions": 125,
+      "unitTests": 71,
+      "demoBrowserSuites": 6,
+      "mockCustomerBrowserSuites": 4
+    },
+    "actualUserLoginVerified": false,
+    "actualAssignmentVerified": false
+  },
+  "operatorUrl": "https://staycut-snap.vercel.app/#manage",
+  "operatorSchemaReady": true,
+  "operatorSchemaStatus": "ready",
+  "operatorUpgradeStatus": "user_reported_atomic_installer_executed_schema_verified_ready",
+  "operatorLiveUploadVerified": false,
+  "operatorFeatures": [
+    "separate_active_operator_role",
+    "existing_verified_customer_tenant_assignment",
+    "private_original_and_separate_preview_upload",
+    "actual_streamed_file_size_hash_type_verification",
+    "immutable_final_paths_after_promotion",
+    "observed_latest_and_revision_guards",
+    "new_versions_without_erasing_approval_history",
+    "audited_access_rights_payment_terms_updates",
+    "selected_tenant_dashboard_search_status_filters",
+    "three_step_video_delivery_preserving_files",
+    "existing_verified_member_addition",
+    "revision_guarded_membership_access_period_and_revocation",
+    "observed_approver_reassignment_preserving_history",
+    "displayed_upload_revision_snapshot_preserved_across_background_refresh",
+    "staged_upload_assignee_and_membership_eligibility_guards"
+  ],
+  "operatorRoleAssignmentStatus": "user_reported_installer_executed_authenticated_console_check_pending",
+  "memberManagementSchemaReady": false,
+  "memberManagementSchemaStatus": "missing_schema",
+  "memberManagementUpgradeStatus": "migration_prepared_administrator_execution_pending",
+  "memberManagementMigration": "202610160003_operator_members.sql"
+}

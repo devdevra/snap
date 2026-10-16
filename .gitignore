@@ -1,0 +1,11 @@
+dist/
+node_modules/
+portal/test-results/
+*.png.b64
+__pycache__/
+.env
+.env.*
+!.env.example
+.vercel/
+supabase/.temp/
+supabase/.branches/
