@@ -25,6 +25,11 @@ const text = (value, max) => typeof value === 'string' && value.trim().length > 
 const date = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
   && Number.isFinite(Date.parse(`${value}T00:00:00Z`))
   && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+const revision = value => Number.isSafeInteger(value) && value > 0 && value <= 2147483647;
+const memberAccess = value => typeof value.accessAllowed === 'boolean'
+  && date(value.accessStartDate) && date(value.accessEndDate)
+  && value.accessStartDate <= value.accessEndDate;
+const memberActions = ['addMember', 'updateMember', 'assignApprover'];
 
 function header(request, name) {
   const value = typeof request.headers?.get === 'function' ? request.headers.get(name)
@@ -104,6 +109,25 @@ function validateInput(input) {
         || !date(input.accessStartDate) || !date(input.accessEndDate)
         || input.accessStartDate > input.accessEndDate) invalid();
       return { ...input, name: input.name.trim(), customerEmail: input.customerEmail.toLowerCase() };
+    case 'addMember':
+      if (!exactKeys(input, ['action', 'tenantId', 'customerEmail', 'accessAllowed', 'accessStartDate', 'accessEndDate'])
+        || !uuid(input.tenantId) || typeof input.customerEmail !== 'string'
+        || input.customerEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.customerEmail)
+        || !memberAccess(input)) invalid();
+      return { ...input, customerEmail: input.customerEmail.toLowerCase() };
+    case 'updateMember':
+      if (!exactKeys(input, ['action', 'tenantId', 'userId', 'expectedRevision', 'active',
+        'accessAllowed', 'accessStartDate', 'accessEndDate'])
+        || !uuid(input.tenantId) || !uuid(input.userId) || !revision(input.expectedRevision)
+        || typeof input.active !== 'boolean' || !memberAccess(input)) invalid();
+      return input;
+    case 'assignApprover':
+      if (!exactKeys(input, ['action', 'assetId', 'assignedApproverId',
+        'expectedAssignedApproverId', 'expectedLatestVersionId'])
+        || !uuid(input.assetId) || !uuid(input.assignedApproverId)
+        || (input.expectedAssignedApproverId !== null && !uuid(input.expectedAssignedApproverId))
+        || (input.expectedLatestVersionId !== null && !uuid(input.expectedLatestVersionId))) invalid();
+      return input;
     case 'prepareUpload': {
       if (!exactKeys(input, ['action', 'tenantId', 'assetId', 'title', 'assignedApproverId', 'changeSummary', 'terms', 'delivery', 'preview', 'expectedRevisionId', 'expectedLatestVersionId'],
         ['action', 'tenantId', 'changeSummary', 'delivery', 'preview'])
@@ -241,12 +265,12 @@ function transport(fetchImpl, { timeoutMs, streamTimeoutMs, deadline, now }) {
   };
 }
 
-function rpcError(result) {
+function rpcError(result, management = false) {
   if (result.status === 401) fail(401, 'AUTH_REQUIRED', '다시 로그인해 주세요.');
   if (result.status === 403 || result.data?.code === '42501') fail(403, 'OPERATOR_REQUIRED', '운영자 권한이 필요합니다.');
   if (result.data?.code === '22023') invalid();
   if (['55000', '23505', '23503', '40001'].includes(result.data?.code)) {
-    fail(409, 'UPLOAD_CONFLICT', '현재 상태와 요청이 일치하지 않습니다. 목록을 새로 불러와 확인해 주세요.');
+    fail(409, management ? 'STATE_CONFLICT' : 'UPLOAD_CONFLICT', '현재 상태와 요청이 일치하지 않습니다. 목록을 새로 불러와 확인해 주세요.');
   }
   if (['PGRST202', 'PGRST205', '42P01', '42883'].includes(result.data?.code)) {
     fail(503, 'CONFIG_REQUIRED', '운영자 데이터베이스 설정이 필요합니다.');
@@ -335,7 +359,7 @@ export function createOperatorHandler({ env = process.env, fetchImpl = globalThi
         const reply = await network.json(`${config.supabaseUrl}/rest/v1/rpc/${name}`, {
           method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(data),
         });
-        if (!reply.ok) rpcError(reply);
+        if (!reply.ok) rpcError(reply, memberActions.includes(input.action));
         return reply.data;
       };
       const context = safeContext(await rpc('operator_context', {}), actorId);
@@ -346,6 +370,27 @@ export function createOperatorHandler({ env = process.env, fetchImpl = globalThi
             p_access_start_date: input.accessStartDate, p_access_end_date: input.accessEndDate });
           if (!record(result)) fail(502, 'UPSTREAM', '고객사 저장 결과를 확인할 수 없습니다.');
           break;
+        case 'addMember':
+        case 'updateMember': {
+          const { action, ...payload } = input;
+          const saved = await rpc(action === 'addMember' ? 'operator_add_member' : 'operator_update_member', { p_input: payload });
+          if (!record(saved) || saved.tenantId !== input.tenantId || !uuid(saved.userId) || !revision(saved.revision)
+            || (input.action === 'updateMember' && saved.userId !== input.userId)) {
+            fail(502, 'UPSTREAM', '고객 접근 권한 저장 결과를 확인할 수 없습니다.');
+          }
+          result = { tenantId: saved.tenantId, userId: saved.userId, revision: saved.revision };
+          break;
+        }
+        case 'assignApprover': {
+          const { action, ...payload } = input;
+          const saved = await rpc('operator_assign_approver', { p_input: payload });
+          if (!record(saved) || saved.assetId !== input.assetId || saved.assignedApproverId !== input.assignedApproverId
+            || (saved.latestVersionId !== null && !uuid(saved.latestVersionId))) {
+            fail(502, 'UPSTREAM', '승인 담당자 저장 결과를 확인할 수 없습니다.');
+          }
+          result = { assetId: saved.assetId, assignedApproverId: saved.assignedApproverId, latestVersionId: saved.latestVersionId };
+          break;
+        }
         case 'updateAsset': {
           const { action, ...payload } = input;
           result = await rpc('operator_update_asset', { p_input: payload });

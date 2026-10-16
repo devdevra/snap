@@ -23,6 +23,7 @@ const OPERATOR_RELATIONS = [
   ['operator_upload_sessions', 'id,actor_id,tenant_id,asset_id,version_id,status,expected_latest_version_id,expected_revision_id,delivery_staging_path,delivery_final_path,preview_staging_path,preview_final_path,expires_at'],
   ['asset_versions', 'id,delivery_bytes,preview_bytes,delivery_mime_type,preview_mime_type'],
 ];
+const MEMBER_RELATIONS = [['tenant_members', 'tenant_id,user_id,revision']];
 const BUCKET = 'staycut-deliverables';
 const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 
@@ -90,6 +91,7 @@ export function createHealthHandler({ env = process.env, fetchImpl = globalThis.
         serverKeyConfigured: false, serverDatabaseReady: false, serverDatabaseStatus: 'not_configured',
         privateStorageReady: false, privateStorageStatus: 'not_configured',
         operatorSchemaReady: false, operatorSchemaStatus: 'not_configured',
+        memberManagementSchemaReady: false, memberManagementSchemaStatus: 'not_configured',
       }));
     }
     const signing = signingConfig(env);
@@ -105,6 +107,8 @@ export function createHealthHandler({ env = process.env, fetchImpl = globalThis.
           `${config.supabaseUrl}/rest/v1/${table}?select=${columns}&limit=0`, signing.headers, timeoutMs)),
         ...OPERATOR_RELATIONS.map(([table, columns]) => probe(fetchImpl,
           `${config.supabaseUrl}/rest/v1/${table}?select=${columns}&limit=0`, signing.headers, timeoutMs)),
+        ...MEMBER_RELATIONS.map(([table, columns]) => probe(fetchImpl,
+          `${config.supabaseUrl}/rest/v1/${table}?select=${columns}&limit=0`, signing.headers, timeoutMs)),
         probe(fetchImpl, `${config.supabaseUrl}/storage/v1/bucket/${BUCKET}`, signing.headers, timeoutMs),
       ]) : null,
     ]);
@@ -116,6 +120,10 @@ export function createHealthHandler({ env = process.env, fetchImpl = globalThis.
     const serverDatabaseStatus = privileged ? relationStatus(privileged.slice(0, SERVER_RELATIONS.length)) : signing.status;
     const privateStorageStatus = privileged ? bucketStatus(privileged.at(-1)) : signing.status;
     const operatorSchemaStatus = privileged ? relationStatus(privileged.slice(SERVER_RELATIONS.length, SERVER_RELATIONS.length + OPERATOR_RELATIONS.length)) : signing.status;
+    const memberManagementSchemaStatus = privileged ? relationStatus(privileged.slice(
+      SERVER_RELATIONS.length + OPERATOR_RELATIONS.length,
+      SERVER_RELATIONS.length + OPERATOR_RELATIONS.length + MEMBER_RELATIONS.length,
+    )) : signing.status;
     // Restricted anonymous access is expected for private data, but cannot prove
     // authenticated RPCs or tenant permissions. Privileged probes verify only the
     // selected schema columns and fixed bucket's privacy, never media existence,
@@ -127,6 +135,7 @@ export function createHealthHandler({ env = process.env, fetchImpl = globalThis.
       serverDatabaseReady: serverDatabaseStatus === 'ready', serverDatabaseStatus,
       privateStorageReady: privateStorageStatus === 'ready', privateStorageStatus,
       operatorSchemaReady: operatorSchemaStatus === 'ready', operatorSchemaStatus,
+      memberManagementSchemaReady: memberManagementSchemaStatus === 'ready', memberManagementSchemaStatus,
     }));
   };
 }

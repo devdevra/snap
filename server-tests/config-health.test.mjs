@@ -12,6 +12,7 @@ const NO_SIGNING = {
   serverKeyConfigured: false, serverDatabaseReady: false, serverDatabaseStatus: 'not_configured',
   privateStorageReady: false, privateStorageStatus: 'not_configured',
   operatorSchemaReady: false, operatorSchemaStatus: 'not_configured',
+  memberManagementSchemaReady: false, memberManagementSchemaStatus: 'not_configured',
 };
 function json(data, status = 200) { return new Response(JSON.stringify(data), { status }); }
 async function invoke(create, options = {}, method = 'GET') {
@@ -121,10 +122,11 @@ test('privileged probes verify complete zero-row schema and exact private bucket
     serverKeyConfigured: true, serverDatabaseReady: true, serverDatabaseStatus: 'ready',
     privateStorageReady: true, privateStorageStatus: 'ready',
     operatorSchemaReady: true, operatorSchemaStatus: 'ready',
+    memberManagementSchemaReady: true, memberManagementSchemaStatus: 'ready',
   });
-  assert.equal(calls.length, 18);
+  assert.equal(calls.length, 19);
   const privileged = calls.filter(call => call.options.headers.apikey === ENV.SUPABASE_SECRET_KEY);
-  assert.equal(privileged.length, 11);
+  assert.equal(privileged.length, 12);
   for (const { url, options } of privileged) {
     assert.equal(options.method, 'GET');
     assert.equal(options.headers.Authorization, undefined);
@@ -214,7 +216,7 @@ test('privileged timeouts abort all probes without claiming readiness or exposin
       aborted += 1; reject(new Error(ENV.SUPABASE_SECRET_KEY));
     }, { once: true }));
   } });
-  assert.equal(aborted, 11);
+  assert.equal(aborted, 12);
   assert.equal(response.body.serverDatabaseReady, false);
   assert.equal(response.body.privateStorageReady, false);
   assert.equal(response.body.serverDatabaseStatus, 'unavailable');
@@ -252,4 +254,21 @@ test('missing operator migration leaves the existing customer schema and private
   assert.equal(response.body.operatorSchemaReady, false);
   assert.equal(response.body.operatorSchemaStatus, 'missing_schema');
   assert.ok(!response.raw.includes('omit operator details'));
+});
+
+test('missing member-management migration leaves existing uploads and customer schema ready', async () => {
+  const response = await invoke(createHealthHandler, { fetchImpl: async url => {
+    if (url.includes('/auth/')) return json({ external: {} });
+    if (url.includes('/storage/')) return json({ id: 'staycut-deliverables', public: false });
+    if (url.includes('select=tenant_id,user_id,revision')) {
+      return json({ code: '42703', message: 'private revision-column details' }, 400);
+    }
+    return json([]);
+  } });
+  assert.equal(response.body.serverDatabaseReady, true);
+  assert.equal(response.body.privateStorageReady, true);
+  assert.equal(response.body.operatorSchemaReady, true);
+  assert.equal(response.body.memberManagementSchemaReady, false);
+  assert.equal(response.body.memberManagementSchemaStatus, 'missing_schema');
+  assert.ok(!response.raw.includes('private revision-column details'));
 });

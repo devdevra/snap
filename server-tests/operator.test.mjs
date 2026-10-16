@@ -43,6 +43,14 @@ const PREPARE_INPUT = {
 const PREPARE = { action: 'prepareUpload', ...PREPARE_INPUT };
 const COMMIT = { action: 'commitUpload', sessionId: SESSION_ID };
 const RESULT = { sessionId: SESSION_ID, tenantId: TENANT_ID, assetId: ASSET_ID, versionId: VERSION_ID, status: 'committed' };
+const ADD_MEMBER = { action: 'addMember', tenantId: TENANT_ID, customerEmail: 'customer@example.com',
+  accessAllowed: true, accessStartDate: '2026-10-01', accessEndDate: '2027-10-01' };
+const UPDATE_MEMBER = { action: 'updateMember', tenantId: TENANT_ID, userId: OTHER_ID, expectedRevision: 7,
+  active: false, accessAllowed: false, accessStartDate: '2026-10-01', accessEndDate: '2027-10-01' };
+const ASSIGN_APPROVER = { action: 'assignApprover', assetId: ASSET_ID, assignedApproverId: OTHER_ID,
+  expectedAssignedApproverId: USER_ID, expectedLatestVersionId: VERSION_ID };
+const MEMBER_RESULT = { tenantId: TENANT_ID, userId: OTHER_ID, revision: 8 };
+const ASSIGN_RESULT = { assetId: ASSET_ID, assignedApproverId: OTHER_ID, latestVersionId: VERSION_ID };
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { 'Content-Type': 'application/json' },
 });
@@ -251,6 +259,179 @@ test('createTenant forwards the four explicit fields under the verified user ide
   }) });
   assert.equal(result.statusCode, 200);
   assert.equal(secretCalls(result.calls).length, 0);
+});
+
+test('member additions normalize email and use only the verified operator JWT without any Storage key', async () => {
+  const { action, ...expected } = ADD_MEMBER;
+  const result = await invoke({ body: { ...ADD_MEMBER, customerEmail: 'Customer@EXAMPLE.COM' },
+    env: { ...ENV, SUPABASE_SECRET_KEY: undefined }, transport: operatorTransport(call => {
+      assert.equal(rpcName(call), 'operator_add_member');
+      assert.deepEqual(JSON.parse(call.body), { p_input: expected });
+      return json({ ...MEMBER_RESULT, member: { privateAudit: 'not part of the public action result' } });
+    }) });
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(result.body, MEMBER_RESULT);
+  assert.equal(result.calls.length, 3);
+  for (const call of result.calls) {
+    assert.equal(call.headers.Authorization, `Bearer ${USER_TOKEN}`);
+    assert.equal(call.headers.apikey, ENV.SUPABASE_PUBLISHABLE_KEY);
+  }
+  assert.equal(secretCalls(result.calls).length, 0);
+  assert.ok(!result.raw.includes('privateAudit'));
+});
+
+test('member updates preserve explicit revocation, access dates and the observed revision under the operator JWT', async () => {
+  for (const body of [UPDATE_MEMBER, { ...UPDATE_MEMBER, active: true, accessAllowed: true }]) {
+    const { action, ...expected } = body;
+    const result = await invoke({ body, env: { ...ENV, SUPABASE_SECRET_KEY: 'invalid-unused-storage-secret' },
+      transport: operatorTransport(call => {
+        assert.equal(rpcName(call), 'operator_update_member');
+        assert.deepEqual(JSON.parse(call.body), { p_input: expected });
+        assert.equal(call.headers.Authorization, `Bearer ${USER_TOKEN}`);
+        return json(MEMBER_RESULT);
+      }) });
+    assert.equal(result.statusCode, 200);
+    assert.deepEqual(result.body, MEMBER_RESULT);
+    assert.equal(result.calls.length, 3);
+    assert.equal(secretCalls(result.calls).length, 0);
+    assert.ok(!result.calls.some(call => call.url.includes('/storage/') || call.url.includes('/admin/')));
+  }
+});
+
+test('approver assignment forwards explicit nullable old approver and latest-version guards without Storage credentials', async () => {
+  for (const expectedAssignedApproverId of [null, USER_ID]) {
+    for (const expectedLatestVersionId of [null, VERSION_ID]) {
+      const body = { ...ASSIGN_APPROVER, expectedAssignedApproverId, expectedLatestVersionId };
+      const { action, ...expected } = body;
+      const result = await invoke({ body, env: { ...ENV, SUPABASE_SECRET_KEY: undefined },
+        transport: operatorTransport(call => {
+          assert.equal(rpcName(call), 'operator_assign_approver');
+          assert.deepEqual(JSON.parse(call.body), { p_input: expected });
+          assert.equal(call.headers.Authorization, `Bearer ${USER_TOKEN}`);
+          return json({ ...ASSIGN_RESULT, latestVersionId: expectedLatestVersionId });
+        }) });
+      assert.equal(result.statusCode, 200);
+      assert.deepEqual(result.body, { ...ASSIGN_RESULT, latestVersionId: expectedLatestVersionId });
+      assert.equal(result.calls.length, 3);
+      assert.equal(secretCalls(result.calls).length, 0);
+    }
+  }
+});
+
+test('member management rejects privilege grants, injected actors, invalid IDs, dates and implicit state changes before authentication', async () => {
+  const invalid = [
+    ...[ADD_MEMBER, UPDATE_MEMBER, ASSIGN_APPROVER].flatMap(body => [
+      { ...body, role: 'owner' }, { ...body, operator: true }, { ...body, actorId: USER_ID },
+    ]),
+    { ...ADD_MEMBER, tenantId: 'invalid' }, { ...UPDATE_MEMBER, tenantId: null },
+    { ...ADD_MEMBER, active: true }, { ...ADD_MEMBER, customerEmail: 'wrong-email' },
+    { ...ADD_MEMBER, customerEmail: ' customer@example.com' },
+    { ...ADD_MEMBER, customerEmail: `customer@example.com\n${ENV.SUPABASE_SECRET_KEY}` },
+    { ...ADD_MEMBER, customerEmail: `${'x'.repeat(250)}@example.com` },
+    { ...UPDATE_MEMBER, userId: 'invalid' },
+    { ...ASSIGN_APPROVER, assetId: 'invalid' }, { ...ASSIGN_APPROVER, assignedApproverId: null },
+    ...[ADD_MEMBER, UPDATE_MEMBER].flatMap(body => [
+      { ...body, accessAllowed: 'true' }, { ...body, accessAllowed: undefined },
+      { ...body, accessStartDate: '2026-02-30' }, { ...body, accessEndDate: '2027-13-01' },
+      { ...body, accessStartDate: null }, { ...body, accessEndDate: undefined },
+      { ...body, accessEndDate: '2026-09-30' },
+    ]),
+    ...[undefined, null, 0, -1, 1.5, '7', 2147483648, Number.MAX_SAFE_INTEGER + 1].map(expectedRevision =>
+      ({ ...UPDATE_MEMBER, expectedRevision })),
+    ...[undefined, null, 'false', 0].map(active => ({ ...UPDATE_MEMBER, active })),
+    ...[undefined, '', false, 'invalid'].flatMap(guard => [
+      { ...ASSIGN_APPROVER, expectedAssignedApproverId: guard },
+      { ...ASSIGN_APPROVER, expectedLatestVersionId: guard },
+    ]),
+  ];
+  for (const body of invalid) {
+    const result = await invoke({ body });
+    assert.equal(result.statusCode, 400, `must reject invalid ${body.action} fields`);
+    assert.equal(result.calls.length, 0);
+    assert.ok(!result.raw.includes(ENV.SUPABASE_SECRET_KEY));
+  }
+});
+
+test('member operations require all fields including explicit concurrency guards', async () => {
+  for (const body of [ADD_MEMBER, UPDATE_MEMBER, ASSIGN_APPROVER]) {
+    for (const key of Object.keys(body).filter(key => key !== 'action')) {
+      const { [key]: missing, ...withoutField } = body;
+      const result = await invoke({ body: withoutField });
+      assert.equal(result.statusCode, 400, `${body.action} requires ${key}`);
+      assert.equal(result.calls.length, 0);
+    }
+  }
+});
+
+test('no member or assignment mutation occurs when live Auth or the operator gate is denied', async () => {
+  for (const body of [ADD_MEMBER, UPDATE_MEMBER, ASSIGN_APPROVER]) {
+    for (const [transport, expectedStatus, expectedCalls] of [
+      [async () => json({ code: 'invalid_token', message: 'private identity' }, 401), 401, 1],
+      [operatorTransport(() => assert.fail('nonoperator must not mutate'),
+        { context: { ...CONTEXT, operator: null } }), 403, 2],
+      [operatorTransport(() => assert.fail('wrong identity must not mutate'),
+        { context: { ...CONTEXT, operator: { user_id: OTHER_ID } } }), 403, 2],
+    ]) {
+      const result = await invoke({ body, transport });
+      assert.equal(result.statusCode, expectedStatus);
+      assert.equal(result.calls.length, expectedCalls);
+      assert.equal(secretCalls(result.calls).length, 0);
+      assert.ok(!result.raw.includes('private identity'));
+    }
+  }
+});
+
+test('stale member revisions, duplicate memberships and changed approvers produce safe explicit state conflicts', async () => {
+  for (const body of [ADD_MEMBER, UPDATE_MEMBER, ASSIGN_APPROVER]) {
+    for (const code of ['55000', '23505', '23503', '40001']) {
+      const result = await invoke({ body, transport: operatorTransport(() => json({ code,
+        message: `private other tenant ${ENV.SUPABASE_SECRET_KEY}`, details: 'private auth email', hint: 'private SQL' }, 400)) });
+      assert.equal(result.statusCode, 409);
+      assert.equal(result.body.code, 'STATE_CONFLICT');
+      assert.equal(result.calls.length, 3, 'a failed mutation is never retried or converted into another action');
+      assert.equal(secretCalls(result.calls).length, 0);
+      assert.ok(!result.raw.includes('private'));
+      assert.ok(!result.raw.includes(ENV.SUPABASE_SECRET_KEY));
+    }
+  }
+});
+
+test('member RPC setup, permission and server failures are sanitized without Storage fallback', async () => {
+  for (const [reply, status, expectedStatus, expectedCode] of [
+    [{ code: 'PGRST202', message: 'private missing function' }, 404, 503, 'CONFIG_REQUIRED'],
+    [{ code: '42501', message: 'private account' }, 403, 403, 'OPERATOR_REQUIRED'],
+    [{ code: '22023', message: 'private invalid user' }, 400, 400, 'VALIDATION'],
+    [{ message: 'private SQL failure' }, 500, 502, 'UPSTREAM'],
+  ]) {
+    const result = await invoke({ body: UPDATE_MEMBER,
+      transport: operatorTransport(() => json({ ...reply, details: ENV.SUPABASE_SECRET_KEY }, status)) });
+    assert.equal(result.statusCode, expectedStatus);
+    assert.equal(result.body.code, expectedCode);
+    assert.equal(result.calls.length, 3);
+    assert.equal(secretCalls(result.calls).length, 0);
+    assert.ok(!result.raw.includes('private'));
+    assert.ok(!result.raw.includes(ENV.SUPABASE_SECRET_KEY));
+  }
+});
+
+test('malformed or mismatched membership save receipts cannot become a successful management response', async () => {
+  for (const [body, replies] of [
+    [ADD_MEMBER, [null, [], { ...MEMBER_RESULT, tenantId: OTHER_ID },
+      { ...MEMBER_RESULT, userId: 'invalid' }, { ...MEMBER_RESULT, revision: 0 }, { ...MEMBER_RESULT, revision: '8' }]],
+    [UPDATE_MEMBER, [{ ...MEMBER_RESULT, userId: USER_ID }, { ...MEMBER_RESULT, revision: 2147483648 }]],
+    [ASSIGN_APPROVER, [null, [], { ...ASSIGN_RESULT, assetId: OTHER_ID },
+      { ...ASSIGN_RESULT, assignedApproverId: USER_ID }, { ...ASSIGN_RESULT, latestVersionId: 'invalid' },
+      { assetId: ASSET_ID, assignedApproverId: OTHER_ID }]],
+  ]) {
+    for (const reply of replies) {
+      const result = await invoke({ body, transport: operatorTransport(() => json(reply)) });
+      assert.equal(result.statusCode, 502);
+      assert.equal(result.body.code, 'UPSTREAM');
+      assert.equal(result.body.tenantId, undefined);
+      assert.equal(result.body.assetId, undefined);
+      assert.equal(secretCalls(result.calls).length, 0);
+    }
+  }
 });
 
 test('prepareUpload validates contract dates, accepted scopes, file metadata and caller-controlled extras', async () => {
